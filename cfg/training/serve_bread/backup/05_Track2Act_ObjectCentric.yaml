@@ -1,0 +1,59 @@
+# ============================================
+# Track2Act Baseline — ObjectCentric (GeoTokens)
+# ============================================
+# Same as Track2Act but with GeoToken conditioning
+# added alongside image features.
+
+# ---- Centric Mode ----
+centric_mode: "object_centric"
+frame_mode: "camera_frame"
+max_state_tokens: 8
+
+# ---- Data ----
+pred_horizon: 50
+max_points: 20
+image_size: [224, 224]
+img_name: "rgb_WoArm_WArmObjKpts.png"
+single_hand_side: "right"
+hand_tracking_method: "aria_mps"
+data_sources:
+  aria: 60
+eval_source: "aria"
+
+# ---- Model ----
+hidden_dim: 512
+num_layers: 12
+num_heads: 8
+mlp_ratio: 4.0
+dropout: 0.1
+action_dim: 10
+num_train_timesteps: 1000
+num_inference_timesteps: 100
+
+# ---- Training ----
+epochs: 400
+batch_size: 16
+lr: 1.0e-4
+weight_decay: 1.0e-2
+warmup_steps: 500
+use_ema: True
+ema_decay: 0.9999
+use_amp: True
+num_workers: 4
+seed: 42
+
+
+# ---- Loss Weights ----
+w_track: 1.0
+w_pos: 3.0
+w_rot: 1.0
+w_g: 1.0
+w_done: 5.0
+
+# ---- Augmentation ----
+augment: True
+
+# ---- Eval & Logging ----
+eval_every: 20
+save_every: 50
+log_every: 10

@@ -1,0 +1,77 @@
+# ============================================
+# ACT — Teleop N=40 Joint Space (v3: freeze backbone)
+# ============================================
+# v2 problem: overfit by epoch 10 (train=0.33, eval=1.55→1.73)
+#   Root cause: 23.6M trainable params vs 24766 samples (~1000 params/sample)
+#
+# v3 fix: freeze entire ResNet18 backbone (pretrained ImageNet features)
+#   freeze_backbone_stages=4 → 12.5M trainable (47% reduction)
+#   ResNet18 features are already good; only policy transformer needs training
+#
+# Param comparison:
+#   v2 (freeze=0): 23,650,695 trainable (100%)
+#   v3 (freeze=4): 12,474,183 trainable (53%)
+
+# ---- Data ----
+pred_horizon: 50
+image_size: [240, 320]
+img_name: "rgb.png"
+single_hand_side: "right"
+hand_tracking_method: "aria_mps"
+data_sources:
+  teleop: 16
+eval_source: "teleop"
+
+# ---- Model ----
+d_model: 256
+nhead: 8
+num_encoder_layers: 4
+num_decoder_layers: 1       # Original ACT paper uses 1
+dim_feedforward: 2048
+dropout: 0.2
+latent_dim: 32
+freeze_backbone_stages: 4   # Freeze ENTIRE ResNet18 backbone (only proj+transformer trained)
+
+# ---- Action Space ----
+action_space: "joint"
+action_dim: 7
+proprio_dim: 7
+
+# ---- KL Schedule ----
+kl_weight_max: 10.0
+kl_anneal_epochs: 10
+
+# ---- Multi-Camera ----
+camera_names: ["cam0", "wrist_right"]
+camera_img_names:
+  cam0: "rgb.png"
+  wrist_right: "rgb_wrist_right.png"
+
+# ---- GeoTokens (OFF) ----
+centric_mode: "ego_centric"
+max_state_tokens: 8
+geo_token_dim: 10
+max_objects: 4
+
+# ---- Training ----
+epochs: 100
+batch_size: 24
+lr: 5.0e-5                  # Lower LR — fewer trainable params need gentler update
+weight_decay: 1.0e-2
+warmup_steps: 500
+use_ema: True
+ema_decay: 0.9995
+use_amp: True
+num_workers: 4
+seed: 42
+
+# ---- Loss Weights ----
+w_pos: 5.0
+
+# ---- Augmentation ----
+augment: True
+
+# ---- Eval & Logging ----
+eval_every: 5                # Finer granularity for early stopping
+save_every: 25
+log_every: 10

@@ -1,0 +1,44 @@
+# ==============================================================================
+# Robot Teleoperation Data Collection Config
+# ==============================================================================
+
+# --- Cameras ---
+# cam0 = fixed top/side camera (always required)
+# wrist_right / wrist_left = optional wrist-mounted cameras
+cameras:
+  cam0:
+    cfg_path: "./cfg/hardware/CamRS.yaml"
+    save_depth: true
+  wrist_right:
+    cfg_path: "./cfg/hardware/CamRSWristRight.yaml"
+    save_depth: false
+  # wrist_left:                              # uncomment for dual-arm
+  #   cfg_path: "./cfg/hardware/CamRSWristLeft.yaml"
+  #   save_depth: false
+
+# Legacy single-camera field (backward compat — overridden by cameras: if present)
+cam_cfg_path: "./cfg/hardware/CamRS.yaml"
+
+# --- Arms ---
+# Follower arm(s) — these execute the task
+follower_right_cfg_path: "./cfg/hardware/RobotArmTrossenRight.yaml"
+follower_left_cfg_path: "./cfg/hardware/RobotArmTrossenLeft.yaml"    # used only if dual_arm=true
+
+# Leader arm(s) — human operator drives these
+leader_right_cfg_path: "./cfg/hardware/RobotArmTrossenRightLeader.yaml"
+leader_left_cfg_path: "./cfg/hardware/RobotArmTrossenLeftLeader.yaml"    # used only if dual_arm=true
+
+# --- Task ---
+save_dir: "./data"
+task_name: "serve_bread"
+dual_arm: false               # true → enable left arms + wrist_left camera
+
+# --- Control ---
+control_freq: 200.0            # Hz — leader→follower mirroring rate
+record_freq: 30.0             # Hz — camera + state recording rate (match cam fps)
+feedback_gain: 0.001           # force feedback from follower → leader
+teleop_ema_alpha: 0.5          # EMA smoothing: 0.0 = max smooth (laggy), 1.0 = raw (jittery), 0.3~0.5 recommended
+
+# --- Depth ---
+save_depth: true               # save depth.png per frame (legacy, overridden by cameras)
+depth_scale_mm: 1.0            # multiply depth_m by 1000 → uint16 mm for PNG

@@ -1,0 +1,106 @@
+# ==============================================================================
+# Robot Kinesthetic Teaching Data Collection Config
+# ==============================================================================
+
+# --- Cameras ---
+cameras:
+  cam0:
+    cfg_path: "./cfg/hardware/CamRS.yaml"
+    save_depth: true
+  wrist_right:
+    cfg_path: "./cfg/hardware/CamRSWristRight.yaml"
+    save_depth: false
+  # wrist_left:                              # uncomment for dual-arm
+  #   cfg_path: "./cfg/hardware/CamRSWristLeft.yaml"
+  #   save_depth: false
+
+# Legacy single-camera field (backward compat)
+cam_cfg_path: "./cfg/hardware/CamRS.yaml"
+
+# --- Arms ---
+follower_right_cfg_path: "./cfg/hardware/RobotArmTrossenRight.yaml"
+follower_left_cfg_path: "./cfg/hardware/RobotArmTrossenLeft.yaml"
+
+# --- Task ---
+save_dir: "./data"
+task_name: "serve_bread"
+dual_arm: true                  # false = single arm (right only); can be overridden by --dual-arm / --single-arm
+
+# In dual-arm mode, which arm(s) become DRAGGABLE during teaching.
+# The non-active arm(s) stay LOCKED (position mode, full stiffness) so they do
+# NOT drift while you are physically dragging the other arm. Without this, both
+# arms in `external_effort` 0-Nm mode are floppy and the inactive arm wanders
+# from table vibrations / cable pulls / accidental contact.
+# Options: "both" (default) | "right" | "left"
+# Runtime keys: 1=right-only, 2=left-only, 3=both (only when not teaching)
+teaching_focus: "both"
+
+# --- Behavior on start / quit ---
+goto_initial_on_start: true      # if true, on startup: lock → go_home → teaching_initial pose
+goto_home_on_quit: true          # if true, arms return home before closing
+confirm_quit: true               # ask y/n before quitting if there is unsaved trajectory
+countdown_before_teach: 0        # seconds to count down before teaching starts (0 = no countdown)
+
+# --- Replay pre/post flight ---
+replay_preflight: true           # if true, P/R: lock → go_home → teaching_initial → traj[0] → replay
+replay_auto_home: true           # if true, after every P/R, automatically go_home
+preflight_move_duration: 3.0     # seconds for each waypoint move in the preflight (home / initial / traj[0])
+
+# In dual-arm mode (when both right and left trajectories were recorded), how
+# the two arms execute during replay (P / R):
+#   "together"     — both arms move simultaneously (single phase, default).
+#   "right_first"  — right arm replays its full trajectory first, then left.
+#   "left_first"   — left arm first, then right.
+# Sequential modes capture ONE session whose recording spans both phases; the
+# inactive arm during a phase stays LOCKED at its trajectory[0] / last waypoint
+# so it doesn't drift. Single-side trajectories ignore this setting.
+replay_order: "left_first"
+
+# --- Teaching-initial pose (joint control, 7-DOF: j1..j6 + gripper) ---
+# Used by startup, the I key, and replay preflight (when replay_preflight=true).
+# Set to null to fall back to RobotArmTrossen<side>.yaml's initial_joints.
+teaching_initial_joints_right: null
+teaching_initial_joints_left: null
+
+# --- Teaching ---
+teach_freq: 30.0                # Hz — joint recording rate during drag teaching
+
+# --- Replay + Record ---
+record_freq: 30.0                # Hz — camera + state recording rate during replay
+replay_speed: 1.0                # 1.0 = original speed; 0.5 = half speed
+replay_cmd_freq: 15.0            # Hz — command send rate during replay.
+                                 #   Too low (<15) → visible stepping / 卡顿.
+                                 #   Too high (>80) → jitter (raw 200Hz teach data is noisy).
+                                 #   Sweet spot: 25–50.
+replay_ema_alpha: 0.1            # EMA smoothing on commanded joints.
+                                 #   0.0 = infinite smoothing (no motion), 1.0 = raw (jittery).
+                                 #   Lower this if motion still feels rough.
+
+# --- Gripper auto-snap (binary, with continuous closing force) ---
+# Strict open-detection: only "fully open" counts as OPEN. Any deviation from
+# fully open is treated as GRAB → switch to external_effort mode and apply a
+# continuous closing force. This is what you want when holding a big object
+# (e.g. a phone) where position-mode close is too soft.
+gripper_snap_enabled: true
+gripper_open_q_min: 0.8          # q (= pos / gripper_max) must be ≥ this to count as OPEN.
+                                 #   q < 0.8 (any noticeable squeeze) → CLOSED.
+gripper_close_mode: "position"   # "position" | "effort"
+                                 #   position : BINARY — both states locked at extremes via position
+                                 #              control. NO rebound. Snap is one-shot. (recommended)
+                                 #   effort   : Continuous force (springy). Use only if position
+                                 #              mode does not provide enough holding force.
+gripper_snap_duration: 0.1       # seconds — duration of the position-mode snap (close→0 / open→max).
+                                 #   Smaller = snappier (more binary feel).
+gripper_record_binary: true      # if true, recorded gripper joint = binary (0 or _gripper_max)
+gripper_initial_state: "open"    # "open" | "closed" | "auto"
+
+# --- Effort-mode parameters (only used if gripper_close_mode == "effort") ---
+gripper_grip_effort_teach: 20.0  # Closing force (N) during teaching.
+gripper_grip_effort_replay: 50.0 # Closing force (N) during replay.
+gripper_grip_ramp_time: 0.1      # ramp time of the effort command.
+gripper_grip_in_replay: true     # apply continuous closing force in replay (effort mode only).
+
+# --- Depth ---
+save_depth: true
+depth_scale_mm: 1.0
+

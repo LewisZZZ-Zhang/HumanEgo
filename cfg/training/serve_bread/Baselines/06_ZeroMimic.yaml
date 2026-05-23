@@ -1,0 +1,54 @@
+# ============================================
+# ZeroMimic Baseline
+# ============================================
+# CVAE + Transformer with KL annealing.
+# Goal-image-conditioned policy.
+
+# ---- Data ----
+pred_horizon: 50
+image_size: [224, 224]
+img_name: "rgb_WoArm_WArmObjKpts.png"
+single_hand_side: "right"
+hand_tracking_method: "aria_mps"
+data_sources:
+  aria: 60
+eval_source: "aria"
+
+# ---- Model ----
+feature_dim: 512
+d_model: 512
+nhead: 8
+num_decoder_layers: 6
+dim_feedforward: 2048
+dropout: 0.1
+latent_dim: 32
+action_dim: 10
+proprio_dim: 10
+kl_weight: 0.01
+
+# ---- Training ----
+epochs: 400
+batch_size: 32
+lr: 1.0e-4
+weight_decay: 1.0e-2
+warmup_steps: 200
+use_ema: True
+ema_decay: 0.999
+use_amp: True
+num_workers: 4
+seed: 42
+
+
+# ---- Loss Weights ----
+w_pos: 3.0
+w_rot: 1.0
+w_g: 1.0
+w_done: 5.0
+
+# ---- Augmentation ----
+augment: True
+
+# ---- Eval & Logging ----
+eval_every: 10
+save_every: 50
+log_every: 10
