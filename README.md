@@ -1,26 +1,91 @@
-# HumanEgo
+<h1 align="center">
+  <img src="assets/humanego_logo.png" height="48" align="center" valign="middle" />
+  HumanEgo
+</h1>
 
-Public release repository for the HumanEgo project.
+<h3 align="center">
+  Zero-Shot Robot Learning<br/>
+  from Minutes of Human Egocentric Videos
+</h3>
 
-This repository hosts the curated, externally-published subset of the HumanEgo
-codebase. Files here are mirrored from the internal development repository by
-an automated sync step; do not edit them directly here — open issues or PRs
-against the relevant upstream files instead.
+<p align="center">
+  <a href="https://tx-leo.github.io">Zhi (Leo) Wang</a> &nbsp;·&nbsp;
+  <a href="https://bottle101.github.io/">Botao He</a> &nbsp;·&nbsp;
+  <a href="https://colinyu1.github.io/">Kelin Yu</a> &nbsp;·&nbsp;
+  <a href="https://sjlee.cc/">Seungjae Lee</a> &nbsp;·&nbsp;
+  <a href="https://ruohangao.github.io/">Ruohan Gao</a> &nbsp;·&nbsp;
+  <a href="https://furong-huang.com/">Furong Huang</a> &nbsp;·&nbsp;
+  <a href="https://robotics.umd.edu/clark/faculty/350/Yiannis-Aloimonos">Yiannis Aloimonos</a>
+</p>
 
-Project page: https://humanego-ai.github.io
+<p align="center"><b>University of Maryland</b></p>
 
-## Contents
+<p align="center">
+  <a href="https://humanego-ai.github.io"><b>Project Page</b></a>
+</p>
 
-- `datacollection/AriaMPS.py` — Project Aria MPS launcher used during capture
-- `preprocess/` — preprocessing pipeline (Aria SLAM/Hands, DINO-SAM, depth, etc.)
-- `training/FlowMatching*.py` — flow-matching policy: model, dataloader, trainer, evaluator
-- `utils/` — shared math / IO / visualisation helpers
-- `cfg/datacollection/`, `cfg/preprocess/`, `cfg/training/` — YAML configs
+<p align="center">
+  <img src="assets/teaser.png" width="100%" alt="HumanEgo teaser" />
+</p>
 
-## Project Aria devignetting masks
+---
 
-The `preprocess/aria_devignetting_masks/` calibration binaries are **not**
-included here (~240 MB total). They are redistributed assets from Meta's
-Project Aria; download them from Project Aria's official channels and place
-them at `preprocess/aria_devignetting_masks/{old,new}_isp/*.bin` before running
-the preprocessing pipeline.
+## Installation
+
+### One-click setup
+
+```bash
+git clone https://github.com/TX-Leo/HumanEgo.git
+cd HumanEgo
+conda create -n humanego python=3.11 -y
+conda activate humanego
+bash setup.sh
+```
+
+This creates a conda environment `humanego` (Python 3.11) and installs everything automatically, including:
+
+- Core ML stack (PyTorch + CUDA, transformers, SAM2, …)
+- Orient-Anything V2 (auto-installed from GitHub as a pip package)
+- CoTracker (auto-installed from GitHub)
+- Hand tracking methods (MediaPipe, WiLoR, HaMeR)
+- Robot hardware SDKs (RealSense, Trossen Arm)
+
+### Optional flags
+
+```bash
+SKIP_HAND=1     bash setup.sh   # skip hand-tracking packages (MediaPipe, WiLoR, HaMeR)
+SKIP_HARDWARE=1 bash setup.sh   # skip pyrealsense2 & trossen-arm (non-robot machines)
+PREDOWNLOAD=1   bash setup.sh   # pre-download all model weights up front
+```
+
+---
+
+## Data Collection
+
+> **TODO** — documentation coming soon.
+
+---
+
+## Preprocess
+
+> **TODO** — documentation coming soon.
+
+---
+
+## Training
+
+> **TODO** — documentation coming soon.
+
+---
+
+## Inference
+
+> **TODO** — documentation coming soon.
+
+---
+
+## Acknowledgements
+
+This project builds on excellent open-source work, including:
+Project Aria Gen 1 & MPS, Trossen Arm, CoTracker3, Grounding DINO, SAM 2,
+HaMeR, WiLoR, MediaPipe, LaMa, and Orient-Anything V2.
