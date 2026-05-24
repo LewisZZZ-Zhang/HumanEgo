@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="assets/humanego_logo.png" height="48" align="center" valign="middle" />
+  <img src="assets/website/images/humanego_logo_trim.png" height="48" />
   HumanEgo
 </h1>
 
@@ -25,7 +25,12 @@
 </p>
 
 <p align="center">
-  <img src="assets/teaser.png" width="100%" alt="HumanEgo teaser" />
+  <video src="https://github.com/TX-Leo/HumanEgo/raw/main/assets/website/images/teaser.mp4"
+         autoplay loop muted playsinline
+         width="100%"
+         poster="assets/website/images/teaser.png">
+    <img src="assets/website/images/teaser.png" alt="HumanEgo teaser" width="100%" />
+  </video>
 </p>
 
 ---
@@ -86,6 +91,15 @@ PREDOWNLOAD=1   bash setup.sh   # pre-download all model weights up front
 
 ## Acknowledgements
 
-This project builds on excellent open-source work, including:
-Project Aria Gen 1 & MPS, Trossen Arm, CoTracker3, Grounding DINO, SAM 2,
-HaMeR, WiLoR, MediaPipe, LaMa, and Orient-Anything V2.
+This project builds on excellent open-source work, including
+[Project Aria](https://www.projectaria.com/) (Gen 1 glasses &amp;
+[MPS](https://facebookresearch.github.io/projectaria_tools/docs/intro)),
+[Trossen Arm](https://www.trossenrobotics.com/),
+[CoTracker3](https://github.com/facebookresearch/co-tracker),
+[Grounding DINO](https://github.com/IDEA-Research/GroundingDINO),
+[SAM 2](https://github.com/facebookresearch/sam2),
+[HaMeR](https://github.com/geopavlakos/hamer),
+[WiLoR](https://github.com/rolpotamias/WiLoR),
+[MediaPipe](https://github.com/google-ai-edge/mediapipe),
+[LaMa](https://github.com/advimman/lama),
+and [Orient-Anything](https://github.com/SpatialVision/Orient-Anything).
