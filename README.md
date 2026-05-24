@@ -1,45 +1,29 @@
-<h1 align="center">
-  <img src="assets/website/images/humanego_logo_trim.png" height="64" />
-  &nbsp;HumanEgo
-</h1>
-
-<h2 align="center">
-  Zero-Shot Robot Learning<br/>
-  from Minutes of Human Egocentric Videos
-</h2>
-
 <p align="center">
-  <b>✦ Robot-Data-Free</b> &nbsp;&nbsp;
-  <b>✦ Hardware-Agnostic</b> &nbsp;&nbsp;
-  <b>✦ Data-Efficient</b> &nbsp;&nbsp;
-  <b>✦ Zero-Shot Transferable</b>
+  <a href="https://humanego-ai.github.io">
+    <img src="assets/title/hero.png" alt="HumanEgo — Zero-Shot Robot Learning from Minutes of Human Egocentric Videos" width="100%" />
+  </a>
 </p>
 
 <p align="center">
   <a href="https://tx-leo.github.io">Zhi (Leo) Wang</a> &nbsp;·&nbsp;
   <a href="https://bottle101.github.io/">Botao He</a> &nbsp;·&nbsp;
   <a href="https://colinyu1.github.io/">Kelin Yu</a> &nbsp;·&nbsp;
-  <a href="https://sjlee.cc/">Seungjae Lee</a>
-  <br/>
+  <a href="https://sjlee.cc/">Seungjae Lee</a> &nbsp;·&nbsp;
   <a href="https://ruohangao.github.io/">Ruohan Gao</a> &nbsp;·&nbsp;
   <a href="https://furong-huang.com/">Furong Huang</a> &nbsp;·&nbsp;
   <a href="https://robotics.umd.edu/clark/faculty/350/Yiannis-Aloimonos">Yiannis Aloimonos</a>
 </p>
 
 <p align="center">
-  <img src="assets/website/images/UMD-logo.png" height="64" alt="University of Maryland" />
-</p>
-
-<p align="center">
-  <a href="https://humanego-ai.github.io"><img src="https://img.shields.io/badge/Project_Page-humanego--ai.github.io-C45A0E?style=for-the-badge" alt="Project Page" /></a>
+  <a href="#" title="Coming soon"><img src="assets/title/btn_paper.png" alt="Paper" height="44" /></a>
   &nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/Paper-Coming_Soon-lightgrey?style=for-the-badge&logo=adobeacrobatreader" alt="Paper" /></a>
+  <a href="#" title="Coming soon"><img src="assets/title/btn_arxiv.png" alt="arXiv" height="44" /></a>
   &nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/arXiv-Coming_Soon-lightgrey?style=for-the-badge&logo=arxiv" alt="arXiv" /></a>
+  <a href="https://github.com/TX-Leo/HumanEgo"><img src="assets/title/btn_code.png" alt="Code" height="44" /></a>
   &nbsp;
-  <a href="https://youtu.be/pdL46diijuY"><img src="https://img.shields.io/badge/Video-YouTube-FF0000?style=for-the-badge&logo=youtube" alt="Video" /></a>
+  <a href="https://youtu.be/pdL46diijuY"><img src="assets/title/btn_video.png" alt="Video" height="44" /></a>
   &nbsp;
-  <a href="#bibtex"><img src="https://img.shields.io/badge/BibTeX-Cite-009688?style=for-the-badge" alt="BibTeX" /></a>
+  <a href="#bibtex"><img src="assets/title/btn_bibtex.png" alt="BibTeX" height="44" /></a>
 </p>
 
 <p align="center">
