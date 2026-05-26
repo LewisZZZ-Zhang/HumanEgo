@@ -92,6 +92,19 @@ python -m training.FlowMatchingTrainer --task "YOUR_TASK" --use_cfg --job "YOUR_
 
 ---
 
+## TODO
+
+We are actively releasing the following — check back soon.
+
+- [ ] Release a 3-minute quick-start tutorial
+- [ ] Release a sample human-egocentric dataset (for end-to-end testing)
+- [ ] Release a pretrained model (for inference demo)
+- [ ] Release documentation for **Preprocessing**
+- [ ] Release documentation for **Training**
+- [ ] Release documentation for **Inference**
+
+---
+
 ## Acknowledgements
 
 This project builds on excellent open-source work, including
