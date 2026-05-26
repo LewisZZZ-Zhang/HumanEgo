@@ -19,8 +19,6 @@
   &nbsp;
   <a href="https://arxiv.org/abs/2605.24934"><img src="assets/title/btn_arxiv.png" alt="arXiv" height="60" /></a>
   &nbsp;
-  <a href="https://github.com/TX-Leo/HumanEgo"><img src="assets/title/btn_code.png" alt="Code" height="60" /></a>
-  &nbsp;
   <a href="https://youtu.be/pdL46diijuY"><img src="assets/title/btn_video.png" alt="Video" height="60" /></a>
   &nbsp;
   <a href="#bibtex"><img src="assets/title/btn_bibtex.png" alt="BibTeX" height="60" /></a>
