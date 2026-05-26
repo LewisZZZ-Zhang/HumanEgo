@@ -15,6 +15,8 @@
 </p>
 
 <p align="center">
+  <a href="https://humanego-ai.github.io"><img src="assets/title/btn_website.png" alt="Website" height="60" /></a>
+  &nbsp;
   <a href="https://arxiv.org/pdf/2605.24934"><img src="assets/title/btn_paper.png" alt="Paper" height="60" /></a>
   &nbsp;
   <a href="https://arxiv.org/abs/2605.24934"><img src="assets/title/btn_arxiv.png" alt="arXiv" height="60" /></a>
