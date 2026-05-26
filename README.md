@@ -34,8 +34,6 @@
 
 ## Installation
 
-### One-click setup
-
 ```bash
 git clone https://github.com/TX-Leo/HumanEgo.git
 cd HumanEgo
@@ -44,21 +42,9 @@ conda activate humanego
 bash setup.sh
 ```
 
-This creates a conda environment `humanego` (Python 3.11) and installs everything automatically, including:
-
-- Core ML stack (PyTorch + CUDA, transformers, SAM2, …)
-- Orient-Anything V2 (auto-installed from GitHub as a pip package)
-- CoTracker (auto-installed from GitHub)
-- Hand tracking methods (MediaPipe, WiLoR, HaMeR)
-- Robot hardware SDKs (RealSense, Trossen Arm)
-
-### Optional flags
-
-```bash
-SKIP_HAND=1     bash setup.sh   # skip hand-tracking packages (MediaPipe, WiLoR, HaMeR)
-SKIP_HARDWARE=1 bash setup.sh   # skip pyrealsense2 & trossen-arm (non-robot machines)
-PREDOWNLOAD=1   bash setup.sh   # pre-download all model weights up front
-```
+This installs PyTorch (with CUDA), the vision foundation models we use
+(SAM 2, Grounding DINO, CoTracker, Orient-Anything V2), and the hand-tracking
+methods (MediaPipe, WiLoR, HaMeR).
 
 ---
 
