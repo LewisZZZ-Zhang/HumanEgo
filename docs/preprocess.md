@@ -48,7 +48,8 @@ python scripts/download_data.py --mode test
 python scripts/download_data.py --mode full
 ```
 
-Both download into `./data/serve_bread/aria/mps_serve_bread_000_vrs/`.
+Both download into `./data/` by default. Pass `--out <dir>` to choose another location
+(e.g. `python scripts/download_data.py --mode test --out /path/to/data`).
 
 <details>
 <summary>Prefer plain <code>huggingface_hub</code> (no helper script)?</summary>

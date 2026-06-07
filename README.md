@@ -71,9 +71,9 @@ python scripts/download_data.py --mode test
 python scripts/download_data.py --mode full
 ```
 
-The sample downloads to `data/serve_bread/aria/mps_serve_bread_000_vrs/`. See
-[`docs/preprocess.md`](docs/preprocess.md) for all download modes (including the full
-dataset) and a plain-`huggingface_hub` recipe. More recordings to follow.
+The sample downloads under `./data/` by default (pass `--out <dir>` to change the
+location). See [`docs/preprocess.md`](docs/preprocess.md) for all download modes (including
+the full dataset) and a plain-`huggingface_hub` recipe. More recordings to follow.
 
 ---
 
