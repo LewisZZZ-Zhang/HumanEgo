@@ -26,6 +26,12 @@
   <a href="#bibtex"><img src="assets/title/btn_bibtex.png" alt="BibTeX" height="60" /></a>
 </p>
 
+<p align="center">
+  <a href="https://huggingface.co/datasets/Leo-TX/HumanEgo"><img src="https://img.shields.io/badge/Dataset-Leo--TX%2FHumanEgo-ff8c2b?style=for-the-badge&logo=huggingface&logoColor=white" alt="HuggingFace Dataset" /></a>
+  &nbsp;
+  <a href="https://leo-tx-humanego-gallery.static.hf.space"><img src="https://img.shields.io/badge/Data_Gallery-Browse_122_clips-ff6a00?style=for-the-badge&logo=huggingface&logoColor=white" alt="Data Gallery" /></a>
+</p>
+
 ---
 
 ## Overview
@@ -213,13 +219,21 @@ the output-file reference, the task-config reference, and download options.
   <img src="assets/architecture.webp" alt="HumanEgo training architecture" width="100%" />
 </p>
 
+Train a flow-matching policy on the preprocessed data:
+
 ```bash
 python -m training.FlowMatchingTrainer --task "YOUR_TASK" --use_cfg --job "YOUR_JOB"
 ```
 
-`--task` selects a folder under `cfg/training/` (e.g. `serve_bread`) and
-`--job` selects a YAML inside it (e.g. `HumanEgo`, resolving to
-`cfg/training/serve_bread/HumanEgo.yaml`).
+`--task` selects the data + config folder under `cfg/training/` and `--job` selects a
+YAML inside it (e.g. `HumanEgo` → `cfg/training/serve_bread/HumanEgo.yaml`); outputs go
+to `runs/<task>/<job>/`.
+
+**To train on your own task:** preprocess your recordings (Step 2 — you need ≥2, one is
+held out for evaluation), then create `cfg/training/<your_task>/HumanEgo.yaml` (copy
+`cfg/training/serve_bread/HumanEgo.yaml` and set `data_sources`, `single_hand`, etc.).
+See **[`training/README.md`](training/README.md)** for what data training expects, the
+full parameter reference, and how to add your own config.
 
 ### Step 4: Inference
 
@@ -233,7 +247,6 @@ We are actively releasing the following — check back soon.
 
 - [ ] Release a 3-minute quick-start tutorial
 - [ ] Release a pretrained model (for inference demo)
-- [ ] Release documentation for **Training**
 - [ ] Release documentation for **Inference**
 
 ---
