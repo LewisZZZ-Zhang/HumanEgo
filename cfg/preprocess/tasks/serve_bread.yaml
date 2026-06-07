@@ -12,3 +12,9 @@ CamTriangulator:
     obj1: "pca1"
     obj2: "pca1"
     default: "pca1"
+
+DepthLifter:
+  pose_method:
+    obj1: "pca1"
+    obj2: "pca1"
+    default: "pca1"
