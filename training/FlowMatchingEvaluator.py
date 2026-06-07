@@ -208,8 +208,8 @@ def put_title(img: np.ndarray, title: str, subtitle: str = "") -> np.ndarray:
 def solve_ode_trajectory(
     model: FlowMatchingModel, 
     x_rgb: torch.Tensor, 
-    x_state: torch.Tensor, 
-    state_mask: torch.Tensor,
+    x_ict: torch.Tensor, 
+    ict_mask: torch.Tensor,
     x_pcd: Optional[torch.Tensor], 
     device: str, 
     action_dim: int, 
@@ -230,15 +230,15 @@ def solve_ode_trajectory(
         x_t = torch.randn(B, pred_horizon, action_dim, device=device)
         
     dt = 1.0 / num_inference_steps
-    anchor_uv = extract_anchor_uv(x_state, use_region_attn)
+    anchor_uv = extract_anchor_uv(x_ict, use_region_attn)
     
     out = None
     for i in range(num_inference_steps):
         t_tensor = torch.full((B, 1), i * dt, device=device)
         out = model(
             x_rgb=x_rgb, 
-            x_state=x_state, 
-            state_mask=state_mask, 
+            x_ict=x_ict, 
+            ict_mask=ict_mask, 
             x_t=x_t, 
             t=t_tensor, 
             x_pcd=x_pcd, 
@@ -266,7 +266,7 @@ def decode_o6d_to_mat(o6d_array: np.ndarray) -> np.ndarray:
 def run_teacher_forced_vis(
     model: FlowMatchingModel, ckpt_path: str, mps_path: str, out_dir: str,
     single_hand_side: str, pred_horizon: int, image_size: Tuple[int, int],
-    device: str, centric_mode: str, frame_mode: str, action_mode: str, max_state_tokens: int,
+    device: str, centric_mode: str, frame_mode: str, action_mode: str, max_ict: int,
     stats: Dict, num_inference_steps: int = 10, max_frames: Optional[int] = None,
     make_video: bool = True, video_fps: int = 30,
     use_done_in_flow: bool = False,
@@ -281,7 +281,7 @@ def run_teacher_forced_vis(
         sessions=[MPSSessions(mps_path)],
         image_size=image_size, pred_horizon=pred_horizon,
         single_hand=single_hand, single_hand_side=single_hand_side,
-        centric_mode=centric_mode, frame_mode=frame_mode, action_mode=action_mode, max_state_tokens=max_state_tokens,
+        centric_mode=centric_mode, frame_mode=frame_mode, action_mode=action_mode, max_ict=max_ict,
         use_pcd_features=model.use_pcd_features,
         use_aux_obj_dynamics=model.use_aux_obj_dynamics,
         use_aux_visual_foresight=model.use_aux_visual_foresight,
@@ -349,15 +349,15 @@ def run_teacher_forced_vis(
         # Build Inputs using DataLoader components
         x_rgb = dummy_ds._load_image_tensor(d_t, 0).unsqueeze(0).to(device)
         T_w2ref = dummy_ds._get_T_w2ref(d_t)
-        state_np, pcd_np, state_mask_np = dummy_ds._build_tokens(d_t, T_w2ref) 
+        state_np, pcd_np, ict_mask_np = dummy_ds._build_ict(d_t, T_w2ref) 
 
-        x_state = torch.from_numpy(state_np).unsqueeze(0).to(device)
-        state_mask = torch.from_numpy(state_mask_np).unsqueeze(0).to(device)
+        x_ict = torch.from_numpy(state_np).unsqueeze(0).to(device)
+        ict_mask = torch.from_numpy(ict_mask_np).unsqueeze(0).to(device)
         x_pcd = torch.from_numpy(pcd_np).unsqueeze(0).to(device) if model.use_pcd_features else None
 
         # --- A. Model Inference ---
         out_dict = solve_ode_trajectory(
-            model, x_rgb, x_state, state_mask, x_pcd, device, 
+            model, x_rgb, x_ict, ict_mask, x_pcd, device, 
             action_dim, pred_horizon, num_inference_steps, 
             use_region_attn=model.use_region_attn, fixed_noise=fixed_x0
         )

@@ -4,7 +4,7 @@
 The Ultimate FlowMatchingDataloader for Multi-Object Flow Matching & Paradigm Ablations.
 
 Features & Ablations Supported:
-- Variable Object Topology: Parses N objects and hands into sequence of Enriched Tokens.
+- Variable Object Topology: Parses N objects and hands into a sequence of Interaction-Centric Tokens (ICTs).
 - Visual Input Ablation: Supports raw RGB, inpainted RGB, or no visual input (State-only).
 - Coordinate System Ablation: Toggles between Object-Centric and Ego-Centric reference frames.
 - Action Representation Ablation: Supports 'absolute' or 'delta' action spaces.
@@ -126,7 +126,7 @@ class MPSSessions:
 
 class FlowMatchingDataloader(Dataset):
     """
-    The Ultimate State-as-Tokens Dataloader for Paradigm Ablations.
+    The Ultimate ICT Dataloader for Paradigm Ablations.
     """
 
     def __init__(
@@ -136,7 +136,7 @@ class FlowMatchingDataloader(Dataset):
         pred_horizon: int = 50,
         single_hand: bool = True,
         single_hand_side: str = "right",
-        max_state_tokens: int = 8,
+        max_ict: int = 8,
         
         # --- Global Paradigm Ablation Switches ---
         img_name: Optional[str] = IMG_NAME,
@@ -176,7 +176,7 @@ class FlowMatchingDataloader(Dataset):
         self.pred_horizon = pred_horizon
         self.single_hand = single_hand
         self.single_hand_side = single_hand_side
-        self.max_state_tokens = max_state_tokens
+        self.max_ict = max_ict
         
         self.img_name = img_name
         self.centric_mode = centric_mode
@@ -209,7 +209,7 @@ class FlowMatchingDataloader(Dataset):
         self.pos_std  = np.array(self.stats['pos']['std'], dtype=np.float32)
 
         # Token Dimension:[TypeID(1) + Pose_in_Ref(9) + HandL_in_This(9) + (Optional HandR_in_This(9)) + Flag(1)]
-        self.token_dim = 20 if self.single_hand else 29
+        self.ict_dim = 20 if self.single_hand else 29
 
         self.samples: List[str] = []
         self._build_index()
@@ -306,9 +306,9 @@ class FlowMatchingDataloader(Dataset):
         return out
 
     # ---------------------
-    # Enriched Tokens Building
+    # ICT Building
     # ---------------------
-    def _build_tokens(self, d: dict, T_w2ref: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _build_ict(self, d: dict, T_w2ref: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         tokens = []
         pcds =[]
         
@@ -356,7 +356,7 @@ class FlowMatchingDataloader(Dataset):
                 p_hand_ref = (T_w2ref @ T_h_w)[:3, 3]
                 pcds.append(self._pad_point_cloud(np.array([p_hand_ref])))
             else:
-                tokens.append(np.zeros(self.token_dim, dtype=np.float32))
+                tokens.append(np.zeros(self.ict_dim, dtype=np.float32))
                 pcds.append(np.zeros((MAX_PTS_PER_ENTITY, 3), dtype=np.float32))
 
         if self.use_object_tokens:
@@ -388,10 +388,10 @@ class FlowMatchingDataloader(Dataset):
                 pcds.append(self._pad_point_cloud(pts_ref))
 
         # 4. Final Padding & Masking
-        state = np.zeros((self.max_state_tokens, self.token_dim), dtype=np.float32)
-        pcd_state = np.zeros((self.max_state_tokens, MAX_PTS_PER_ENTITY, 3), dtype=np.float32)
-        mask = np.zeros(self.max_state_tokens, dtype=bool)
-        n_tok = min(len(tokens), self.max_state_tokens)
+        state = np.zeros((self.max_ict, self.ict_dim), dtype=np.float32)
+        pcd_state = np.zeros((self.max_ict, MAX_PTS_PER_ENTITY, 3), dtype=np.float32)
+        mask = np.zeros(self.max_ict, dtype=bool)
+        n_tok = min(len(tokens), self.max_ict)
         
         for i in range(n_tok):
             if tokens[i][0] == TYPE_PAD: continue
@@ -423,16 +423,16 @@ class FlowMatchingDataloader(Dataset):
 
         return np.linalg.inv(T_ref_a_w)
 
-    def _build_tokens_interpolated(self, d0: dict, d1: dict, T_w2ref_a: np.ndarray, alpha: float) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _build_ict_interpolated(self, d0: dict, d1: dict, T_w2ref_a: np.ndarray, alpha: float) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Linearly interpolates tokens between two frames for sub-step augmentation (legacy feature)."""
-        state0, pcd0, mask0 = self._build_tokens(d0, T_w2ref_a)
-        state1, pcd1, mask1 = self._build_tokens(d1, T_w2ref_a)
+        state0, pcd0, mask0 = self._build_ict(d0, T_w2ref_a)
+        state1, pcd1, mask1 = self._build_ict(d1, T_w2ref_a)
 
         state_interp = np.zeros_like(state0)
         pcd_interp = np.zeros_like(pcd0)
         mask_interp = mask0 & mask1  # Token must be valid in both frames
 
-        for i in range(self.max_state_tokens):
+        for i in range(self.max_ict):
             if mask_interp[i]:
                 state_interp[i] = state0[i] + (state1[i] - state0[i]) * alpha
                 state_interp[i, 0] = state0[i, 0]  # Keep TypeID exact
@@ -694,10 +694,10 @@ class FlowMatchingDataloader(Dataset):
         # 4. Build Base Reference Frame & Tokens
         if alpha > 0 and d1 is not None:
             T_w2ref_base = self._interpolate_T_w2ref(d0, d1, alpha)
-            x_state_np, x_pcd_np, state_mask_np = self._build_tokens_interpolated(d0, d1, T_w2ref_base, alpha)
+            x_ict_np, x_pcd_np, ict_mask_np = self._build_ict_interpolated(d0, d1, T_w2ref_base, alpha)
         else:
             T_w2ref_base = self._get_T_w2ref(d0)
-            x_state_np, x_pcd_np, state_mask_np = self._build_tokens(d0, T_w2ref_base)
+            x_ict_np, x_pcd_np, ict_mask_np = self._build_ict(d0, T_w2ref_base)
 
         anchor_uv = np.array([0.5, 0.5], dtype=np.float32)
         anchor_key = d0["metadata"].get("anchor_key", "obj1")
@@ -715,9 +715,9 @@ class FlowMatchingDataloader(Dataset):
 
         out = {
             "x_rgb": x_rgb,
-            "x_state": torch.from_numpy(x_state_np).float(),
+            "x_ict": torch.from_numpy(x_ict_np).float(),
             "x_pcd": torch.from_numpy(x_pcd_np).float() if self.use_pcd_features else torch.zeros(1),
-            "state_mask": torch.from_numpy(state_mask_np).bool(),
+            "ict_mask": torch.from_numpy(ict_mask_np).bool(),
 
             "meta_t": torch.tensor(int(d0.get("metadata", {}).get("idx", 0)), dtype=torch.int64),
             "temporal_stride": torch.tensor(stride, dtype=torch.int64),
@@ -735,9 +735,9 @@ class FlowMatchingDataloader(Dataset):
             if not d_fut:
                 d_fut = d0
 
-            x_state_fut_np, _, state_mask_fut_np = self._build_tokens(d_fut, T_w2ref_base)
-            out["x_state_future"] = torch.from_numpy(x_state_fut_np).float()
-            out["state_mask_future"] = torch.from_numpy(state_mask_fut_np).bool()
+            x_ict_fut_np, _, ict_mask_fut_np = self._build_ict(d_fut, T_w2ref_base)
+            out["x_ict_future"] = torch.from_numpy(x_ict_fut_np).float()
+            out["ict_mask_future"] = torch.from_numpy(ict_mask_fut_np).bool()
 
         out.update(y_dict)
         return out
@@ -763,11 +763,11 @@ if __name__ == "__main__":
         print(f"\n[FlowMatchingDataloader Check]")
         print(f"Total samples: {len(ds)}")
         print(f"x_rgb shape: {sample['x_rgb'].shape}")
-        print(f"x_state shape: {sample['x_state'].shape}  Valid Tokens: {sample['state_mask'].sum().item()}")
+        print(f"x_ict shape: {sample['x_ict'].shape}  Valid Tokens: {sample['ict_mask'].sum().item()}")
         print(f"x_pcd shape: {sample['x_pcd'].shape}")
         
-        if "x_state_future" in sample:
-            print(f"x_state_future shape: {sample['x_state_future'].shape}")
+        if "x_ict_future" in sample:
+            print(f"x_ict_future shape: {sample['x_ict_future'].shape}")
             
         print(f"y_action shape: {sample['y_action'].shape} (10D per hand * num_hands)")
         print(f"y_obj_action shape: {sample['y_obj_action'].shape}")
@@ -775,8 +775,8 @@ if __name__ == "__main__":
         print(f"Temporal Stride Sampled: {sample['temporal_stride'].item()}")
         
         print("\n--- First Valid Token (Features) ---")
-        idx = torch.where(sample['state_mask'])[0][0]
-        tok = sample['x_state'][idx]
+        idx = torch.where(sample['ict_mask'])[0][0]
+        tok = sample['x_ict'][idx]
         print(f"Type={tok[0]:.0f} | Pose_in_Ref={tok[1:4].numpy().round(3)} | Flag={tok[-1]:.1f}")
 
 # python -m training.FlowMatchingDataloader --mps_path  "./data/serve_bread/serve_bread_0/mps_serve_bread_0_029_vrs/"

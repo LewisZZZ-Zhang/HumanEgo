@@ -2,7 +2,7 @@
 
 Train a HumanEgo **flow-matching policy** from preprocessed Aria data. The policy
 predicts a short horizon of future 6-DoF hand (and object) motion from an egocentric
-image plus a set of *state tokens* (the hands and objects in the scene). This doc
+image plus a set of *ICTs* (the hands and objects in the scene). This doc
 covers (1) how to train, (2) the data it expects, (3) the files in `training/`,
 (4) what a run produces, and (5) every config parameter + how to add your own task.
 
@@ -58,8 +58,8 @@ lists instead.)
 | File | What it is |
 |------|-----------|
 | `FlowMatchingTrainer.py` | **Entry point** — CLI, config resolution, the train/eval loop, checkpointing. Run with `python -m training.FlowMatchingTrainer`. |
-| `FlowMatchingModel.py` | The **policy network** — a flow-matching decoder over state tokens, with optional region-aware attention, point-cloud injection, and the auxiliary co-training heads. |
-| `FlowMatchingDataloader.py` | Builds per-frame **samples** from `training_data.json`: the image(s), state tokens (hands + objects), and future-horizon targets. Implements the paradigm ablations (frame / centric / action modes, dual-hand, augmentations). |
+| `FlowMatchingModel.py` | The **policy network** — a flow-matching decoder over ICTs, with optional region-aware attention, point-cloud injection, and the auxiliary co-training heads. |
+| `FlowMatchingDataloader.py` | Builds per-frame **samples** from `training_data.json`: the image(s), ICTs (hands + objects), and future-horizon targets. Implements the paradigm ablations (frame / centric / action modes, dual-hand, augmentations). |
 | `FlowMatchingEvaluator.py` | Teacher-forced **visual evaluator** — renders GT-vs-prediction trajectory videos during training. |
 
 ---
@@ -137,7 +137,7 @@ python -m training.FlowMatchingTrainer --task <task> --use_cfg --job <job> [--ex
 | `image_size` | [240, 320] | Input image size (H, W). |
 | `img_name` | `rgb_WoArm_WArmObjKpts.png` | Which preprocessed image variant to feed; set to `None` for state-only (no vision). |
 | `single_hand` / `single_hand_side` | False / "right" | One-handed vs bimanual; which hand when single. |
-| `max_state_tokens` | 8 | Max number of state tokens (hands + objects). |
+| `max_ict` | 8 | Max number of ICTs (hands + objects). |
 | `hand_tracking_method` | `aria_mps` | Which hand source to read from `training_data.json`. |
 
 **Paradigm (model inductive biases)**
@@ -157,7 +157,7 @@ python -m training.FlowMatchingTrainer --task <task> --use_cfg --job <job> [--ex
 |-----|---------|---------|
 | `use_aux_obj_dynamics` | False | Jointly model object dynamics. |
 | `use_aux_visual_foresight` | False | Predict future 2D spatial heatmaps. |
-| `use_aux_temporal_contrastive` | False | Predict future state tokens in latent space. |
+| `use_aux_temporal_contrastive` | False | Predict future ICTs in latent space. |
 
 **Loss weights**
 

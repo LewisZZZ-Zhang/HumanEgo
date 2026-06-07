@@ -1,10 +1,10 @@
 """
-Shared GeoToken building utilities for baselines.
+Shared Interaction-Centric Token (ICT) building utilities for baselines.
 
-Replicates the FlowMatchingDataloader._build_tokens() logic in a standalone
+Replicates the FlowMatchingDataloader._build_ict() logic in a standalone
 function so all baselines can share it without importing the full dataloader.
 
-Token format (single hand, object_centric):
+ICT format (single hand, object_centric):
     [TypeID(1), pose_in_ref(9), hand_in_entity(9), flag(1)] = 20 dims
 where:
     pose_in_ref(9) = [normalized_pos(3), normalized_o6d(6)]
@@ -26,8 +26,8 @@ TYPE_OBJ_ANCHOR = 3.0
 TYPE_OBJ_OTHER = 4.0
 
 # Default token dims for single hand
-TOKEN_DIM_SINGLE_HAND = 20   # TypeID(1) + pose(9) + hand_in_entity(9) + flag(1)
-MAX_STATE_TOKENS_DEFAULT = 8
+ICT_DIM_SINGLE_HAND = 20   # TypeID(1) + pose(9) + hand_in_entity(9) + flag(1)
+MAX_ICT_DEFAULT = 8
 
 _HAND_KEYS = {
     "aria_mps": "hands",
@@ -44,22 +44,22 @@ def _encode_geometry(T_matrix, pos_mean, pos_std):
     return np.concatenate([pos, o6d]).astype(np.float32)
 
 
-def build_geo_tokens(
+def build_ict(
     d: dict,
     pos_mean: np.ndarray,
     pos_std: np.ndarray,
     single_hand_side: str = 'right',
-    max_state_tokens: int = MAX_STATE_TOKENS_DEFAULT,
-    token_dim: int = TOKEN_DIM_SINGLE_HAND,
+    max_ict: int = MAX_ICT_DEFAULT,
+    ict_dim: int = ICT_DIM_SINGLE_HAND,
     hand_tracking_method: str = 'aria_mps',
     frame_mode: str = 'camera_frame',
 ):
     """
-    Build GeoTokens from a training_data.json dict.
+    Build ICTs from a training_data.json dict.
 
     Returns:
-        x_state: (max_state_tokens, token_dim) float32
-        state_mask: (max_state_tokens,) bool
+        x_ict: (max_ict, ict_dim) float32
+        ict_mask: (max_ict,) bool
     """
     hand_entity_key = _HAND_KEYS.get(hand_tracking_method, "hands")
 
@@ -110,7 +110,7 @@ def build_geo_tokens(
             tok = np.concatenate([[type_id], pose_in_ref, hand_in_hand, [grasp]])
             tokens.append(tok.astype(np.float32))
         else:
-            tokens.append(np.zeros(token_dim, dtype=np.float32))
+            tokens.append(np.zeros(ict_dim, dtype=np.float32))
 
     # 2. Anchor object token
     if anchor_key in objs:
@@ -131,30 +131,30 @@ def build_geo_tokens(
         tokens.append(tok.astype(np.float32))
 
     # 4. Pad and mask
-    x_state = np.zeros((max_state_tokens, token_dim), dtype=np.float32)
-    state_mask = np.zeros(max_state_tokens, dtype=bool)
-    n_tok = min(len(tokens), max_state_tokens)
+    x_ict = np.zeros((max_ict, ict_dim), dtype=np.float32)
+    ict_mask = np.zeros(max_ict, dtype=bool)
+    n_tok = min(len(tokens), max_ict)
     for i in range(n_tok):
         if tokens[i][0] != TYPE_PAD:
-            x_state[i] = tokens[i]
-            state_mask[i] = True
+            x_ict[i] = tokens[i]
+            ict_mask[i] = True
 
-    return x_state, state_mask
+    return x_ict, ict_mask
 
 
-def build_geo_tokens_from_poses(
+def build_ict_from_poses(
     hand_T_cam: np.ndarray,
     grasp: float,
     obj_T_cam_list: list,
     pos_mean: np.ndarray,
     pos_std: np.ndarray,
     single_hand_side: str = 'right',
-    max_state_tokens: int = MAX_STATE_TOKENS_DEFAULT,
-    token_dim: int = TOKEN_DIM_SINGLE_HAND,
+    max_ict: int = MAX_ICT_DEFAULT,
+    ict_dim: int = ICT_DIM_SINGLE_HAND,
     anchor_idx: int = 0,
 ):
     """
-    Build GeoTokens from explicit poses (for real-world inference).
+    Build ICTs from explicit poses (for real-world inference).
 
     All poses should already be in the reference frame (cam0).
 
@@ -164,13 +164,13 @@ def build_geo_tokens_from_poses(
         obj_T_cam_list: list of (4,4) object poses in camera frame
         pos_mean, pos_std: normalization stats
         single_hand_side: 'left' or 'right'
-        max_state_tokens: max tokens
-        token_dim: token dimension
+        max_ict: max tokens
+        ict_dim: token dimension
         anchor_idx: which object in list is the anchor (default 0)
 
     Returns:
-        x_state: (max_state_tokens, token_dim) float32
-        state_mask: (max_state_tokens,) bool
+        x_ict: (max_ict, ict_dim) float32
+        ict_mask: (max_ict,) bool
     """
     # In camera frame, T_w2ref = I (poses are already in cam)
     # So pose_in_ref is just the cam-frame encoding
@@ -200,12 +200,12 @@ def build_geo_tokens_from_poses(
         tokens.append(tok.astype(np.float32))
 
     # 3. Pad and mask
-    x_state = np.zeros((max_state_tokens, token_dim), dtype=np.float32)
-    state_mask = np.zeros(max_state_tokens, dtype=bool)
-    n_tok = min(len(tokens), max_state_tokens)
+    x_ict = np.zeros((max_ict, ict_dim), dtype=np.float32)
+    ict_mask = np.zeros(max_ict, dtype=bool)
+    n_tok = min(len(tokens), max_ict)
     for i in range(n_tok):
         if tokens[i][0] != TYPE_PAD:
-            x_state[i] = tokens[i]
-            state_mask[i] = True
+            x_ict[i] = tokens[i]
+            ict_mask[i] = True
 
-    return x_state, state_mask
+    return x_ict, ict_mask

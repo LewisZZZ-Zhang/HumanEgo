@@ -60,7 +60,7 @@ image_size: [240, 320]
 centric_mode: "object_centric"
 frame_mode: "anchor_frame"
 action_mode: "absolute"
-max_state_tokens: 8
+max_ict: 8
 use_region_attn: False
 use_ot_cfm: False
 

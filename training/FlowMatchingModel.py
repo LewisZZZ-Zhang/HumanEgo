@@ -7,11 +7,11 @@
 # advanced Co-Training paradigms designed for few-shot robotic manipulation.
 #
 # ABLATIONS & FEATURES:
-# 1. State-as-Tokens: Handles variable number of objects natively.
-# 2. Point Cloud Injection: Fuses explicit 3D geometry (x_pcd) into State Tokens via PointNet.
+# 1. ICT: Handles variable number of objects natively.
+# 2. Point Cloud Injection: Fuses explicit 3D geometry (x_pcd) into ICTs via PointNet.
 # 3. Object Dynamics Co-Training: Joint manifold flow matching (19D/29D).
 # 4. Visual Foresight: Dynamic Deconv head predicting future 2D spatial heatmaps.
-# 5. Temporal Contrastive: Predicts future state tokens in latent space.
+# 5. Temporal Contrastive: Predicts future ICTs in latent space.
 # 6. Learnable Region-Aware Attention: Gaussian bias with learnable spotlight (sigma).
 # ================================================================
 
@@ -70,7 +70,7 @@ class MiniPointNet(nn.Module):
         )
         
     def forward(self, pts: torch.Tensor) -> torch.Tensor:
-        # pts: (B, T_state, 64, 3)
+        # pts: (B, T_ict, 64, 3)
         B, T, N, _ = pts.shape
         x = pts.view(B * T, N, 3).transpose(1, 2)  # (B*T, 3, 64)
         
@@ -153,7 +153,7 @@ class FlowMatchingModel(nn.Module):
         *,
         single_hand: bool = True,
         pred_horizon: int = 50,
-        max_state_tokens: int = 8, 
+        max_ict: int = 8, 
 
         img_size: Tuple[int, int] = (240, 320),
         patch_size: int = 16,
@@ -209,10 +209,13 @@ class FlowMatchingModel(nn.Module):
         # -------------------------------
         self.rgb_embed = PatchEmbed(3, vision_embed_dim, patch_size)
 
-        # Token Dimension:[TypeID(1) + Pose_in_Ref(9) + HandL_in_This(9) + (HandR_in_This(9)) + Flag(1)]
-        self.token_dim = 20 if single_hand else 29
-        self.state_proj = nn.Linear(self.token_dim, vision_embed_dim)
-        self.state_pos_emb = nn.Parameter(torch.randn(1, max_state_tokens, vision_embed_dim))
+        # ICT Dimension:[TypeID(1) + Pose_in_Ref(9) + HandL_in_This(9) + (HandR_in_This(9)) + Flag(1)]
+        self.ict_dim = 20 if single_hand else 29
+        # NOTE: attr names `state_proj` / `state_pos_emb` (and `head_future_state` below) are
+        # intentionally kept (not renamed to ict_*) for backward-compat with existing
+        # checkpoints (these become state_dict keys). They project / position-embed the ICTs.
+        self.state_proj = nn.Linear(self.ict_dim, vision_embed_dim)
+        self.state_pos_emb = nn.Parameter(torch.randn(1, max_ict, vision_embed_dim))
         
         # Explicit 3D PCD Features
         if self.use_pcd_features:
@@ -261,7 +264,7 @@ class FlowMatchingModel(nn.Module):
             self.head_future_state = nn.Sequential(
                 nn.Linear(vision_embed_dim, vision_embed_dim),
                 nn.Mish(),
-                nn.Linear(vision_embed_dim, self.token_dim)
+                nn.Linear(vision_embed_dim, self.ict_dim)
             )
 
         # 4. Done (Task Termination) Head — only when Done is NOT in flow matching
@@ -289,7 +292,7 @@ class FlowMatchingModel(nn.Module):
             w = torch.ones(K)
         return w / w.sum()
 
-    def _generate_spatial_bias(self, anchor_uv: torch.Tensor, T_state: int, N_vis: int) -> torch.Tensor:
+    def _generate_spatial_bias(self, anchor_uv: torch.Tensor, T_ict: int, N_vis: int) -> torch.Tensor:
         """ Generates a dynamic Gaussian bias mask centered at the Anchor Object. """
         B = anchor_uv.size(0)
         grid_h, grid_w = self.img_size[0] // self.patch_size, self.img_size[1] // self.patch_size
@@ -309,19 +312,19 @@ class FlowMatchingModel(nn.Module):
         vis_bias = - (dist_sq / (2 * sigma_sq)) 
         vis_bias = vis_bias.view(B, N_vis)      
         
-        state_bias = torch.zeros((B, T_state), device=anchor_uv.device)
+        state_bias = torch.zeros((B, T_ict), device=anchor_uv.device)
         full_bias = torch.cat([state_bias, vis_bias], dim=1) 
         
         full_bias = full_bias.unsqueeze(1).unsqueeze(1) 
-        full_bias = full_bias.expand(B, self.num_heads, self.pred_horizon, T_state + N_vis)
-        return full_bias.reshape(B * self.num_heads, self.pred_horizon, T_state + N_vis)
+        full_bias = full_bias.expand(B, self.num_heads, self.pred_horizon, T_ict + N_vis)
+        return full_bias.reshape(B * self.num_heads, self.pred_horizon, T_ict + N_vis)
 
     def forward(
         self,
         *,
         x_rgb: torch.Tensor,       
-        x_state: torch.Tensor,     
-        state_mask: torch.Tensor,
+        x_ict: torch.Tensor,     
+        ict_mask: torch.Tensor,
         x_t: torch.Tensor,         
         t: torch.Tensor,
         x_pcd: Optional[torch.Tensor] = None,
@@ -335,24 +338,24 @@ class FlowMatchingModel(nn.Module):
         vis_tokens = self.rgb_embed(x_rgb)  
         N_vis = vis_tokens.size(1)
 
-        # 2. State Tokens (With Optional 3D PCD Fusion)
-        T_state = x_state.size(1)
-        state_tokens = self.state_proj(x_state)  
-        
+        # 2. ICTs (With Optional 3D PCD Fusion)
+        T_ict = x_ict.size(1)
+        ict_tokens = self.state_proj(x_ict)
+
         if self.use_pcd_features and x_pcd is not None:
-            # x_pcd shape is (B, T_state, 64, 3), fallback check for dummy 1D tensor
+            # x_pcd shape is (B, T_ict, 64, 3), fallback check for dummy 1D tensor
             if x_pcd.dim() == 4:
                 pcd_feats = self.pcd_encoder(x_pcd)
-                state_tokens = state_tokens + self.pcd_alpha * pcd_feats
-                
-        state_tokens = state_tokens + self.state_pos_emb[:, :T_state, :]
+                ict_tokens = ict_tokens + self.pcd_alpha * pcd_feats
+
+        ict_tokens = ict_tokens + self.state_pos_emb[:, :T_ict, :]
 
         # 3. Context & Masking
-        ctx = torch.cat([state_tokens, vis_tokens], dim=1) 
+        ctx = torch.cat([ict_tokens, vis_tokens], dim=1) 
         ctx = self.ctx_norm(ctx) 
         
         vis_pad = torch.zeros((B, N_vis), dtype=torch.bool, device=x_rgb.device)
-        ctx_pad = torch.cat([~state_mask, vis_pad], dim=1) 
+        ctx_pad = torch.cat([~ict_mask, vis_pad], dim=1) 
 
         # 4. Action Query
         t_emb = self.time_mlp(t)
@@ -362,7 +365,7 @@ class FlowMatchingModel(nn.Module):
         # 5. Region Attention Bias
         spatial_attn_bias = None
         if self.use_region_attn and anchor_uv is not None:
-            spatial_attn_bias = self._generate_spatial_bias(anchor_uv, T_state, N_vis)
+            spatial_attn_bias = self._generate_spatial_bias(anchor_uv, T_ict, N_vis)
 
         # 6. Transformer
         for blk in self.decoder:
@@ -394,7 +397,7 @@ class FlowMatchingModel(nn.Module):
 
         #[HEAD 3]: Temporal Contrastive
         if self.use_aux_temporal_contrastive:
-            out_dict["state_fut_pred"] = self.head_future_state(state_tokens)
+            out_dict["ict_fut_pred"] = self.head_future_state(ict_tokens)
 
         return out_dict
 
@@ -480,14 +483,14 @@ class FlowMatchingModel(nn.Module):
             loss_dict["loss_foresight"] = loss_trace.detach()
 
         # --- 3. Temporal Contrastive Loss ---
-        if self.use_aux_temporal_contrastive and "state_fut_pred" in preds and "x_state_future" in targets:
+        if self.use_aux_temporal_contrastive and "ict_fut_pred" in preds and "x_ict_future" in targets:
             lam_tc = loss_lambdas.get("lambda_contrastive", 1.0) if loss_lambdas else 1.0
             
             # 🌟 Core Slicing: The Dataloader strictly guarantees that the first 'num_hands' tokens are always hand tokens!
             num_h = self.num_hands
-            s_pred_hand = preds["state_fut_pred"][:, :num_h].float()
-            s_target_hand = targets["x_state_future"][:, :num_h].float()
-            s_mask_hand = targets["state_mask_future"][:, :num_h].float().unsqueeze(-1) 
+            s_pred_hand = preds["ict_fut_pred"][:, :num_h].float()
+            s_target_hand = targets["x_ict_future"][:, :num_h].float()
+            s_mask_hand = targets["ict_mask_future"][:, :num_h].float().unsqueeze(-1) 
             
             # Penalize only the deviation of future hand features, effectively removing 
             # interference/noise from environmental objects in the latent space.
@@ -513,18 +516,18 @@ if __name__ == "__main__":
     
     B, K, H, W = 2, 50, 240, 320
     x_rgb = torch.randn(B, 3, H, W)
-    x_state = torch.randn(B, 8, 29) # 29D Token (Dual Hand)
+    x_ict = torch.randn(B, 8, 29) # 29D Token (Dual Hand)
     x_pcd = torch.randn(B, 8, 64, 3) # 8 entities, 64 pts each
-    state_mask = torch.ones(B, 8, dtype=torch.bool)
+    ict_mask = torch.ones(B, 8, dtype=torch.bool)
     
     x_t = torch.randn(B, K, 29) # 29D Joint Manifold (no Done dim — Done uses separate head)
     t = torch.rand(B, 1)
     
-    out = model(x_rgb=x_rgb, x_state=x_state, state_mask=state_mask, x_t=x_t, t=t, x_pcd=x_pcd)
+    out = model(x_rgb=x_rgb, x_ict=x_ict, ict_mask=ict_mask, x_t=x_t, t=t, x_pcd=x_pcd)
     
     print(f"-> V_pred shape: {out['v_pred'].shape} (Expected B, K, 29)")
     print(f"-> Trace shape: {out['trace_pred'].shape} (Expected B, K, 3, 2)")
-    print(f"-> State Future shape: {out['state_fut_pred'].shape} (Expected B, 8, 29)")
+    print(f"-> State Future shape: {out['ict_fut_pred'].shape} (Expected B, 8, 29)")
 
 
 # python -m training.FlowMatchingModel

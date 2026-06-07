@@ -5,15 +5,15 @@ FlowMatchingTrainer (Flow Matching, multi-step) - The Ultimate Paradigm Shift Ve
 
 Pipeline Alignment:
 - Dataset: training.FlowMatchingDataloader
-    Inputs: x_rgb, x_state (Tokens), state_mask, x_pcd (Explicit Geometry)
-    Targets: y_action, y_obj_action, y_trace, x_state_future
+    Inputs: x_rgb, x_ict (Tokens), ict_mask, x_pcd (Explicit Geometry)
+    Targets: y_action, y_obj_action, y_trace, x_ict_future
 - Model: training.FlowMatchingModel
-    Forward outputs: v_pred, trace_pred, state_fut_pred
+    Forward outputs: v_pred, trace_pred, ict_fut_pred
 
 Features:
 - Generative Training via Flow Matching.
 - OT-CFM (Optimal Transport Conditional Flow Matching): Hungarian matching for straighter flows.
-- State-as-Tokens: Handles variable number of objects natively.
+- ICT: Handles variable number of objects natively.
 - Full Ablation Suite: Image modes, Frame modes, Action modes, Dual-hand modes.
 - Aux: Visual Foresight, Object Dynamics, Temporal Contrastive.
 """
@@ -184,7 +184,7 @@ class TrainConfig:
     pred_horizon: int = 50
     single_hand: bool = False
     single_hand_side: str = "right"
-    max_state_tokens: int = 8
+    max_ict: int = 8
 
     # --- Training Hyperparams ---
     batch_size: int = 32
@@ -267,9 +267,9 @@ def _panel_cfg(cfg: TrainConfig) -> Panel:
     return Panel(txt, title="GRASP POLICY TRAIN CONFIG (ULTIMATE FM)", expand=False)
 
 
-def is_zero_state(x_state: torch.Tensor, state_mask: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+def is_zero_state(x_ict: torch.Tensor, ict_mask: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
     # Token layout index 1:4 is Position. Token 0 is Hand.
-    return (x_state[:, 0, 1:4].abs().sum(dim=1) <= eps)
+    return (x_ict[:, 0, 1:4].abs().sum(dim=1) <= eps)
 
 def get_dataset_stats(mps_paths: list, cfg: TrainConfig) -> dict:
     console.print(f"[bold yellow]Computing dataset statistics for {len(mps_paths)} sessions...[/]")
@@ -278,7 +278,7 @@ def get_dataset_stats(mps_paths: list, cfg: TrainConfig) -> dict:
         single_hand=cfg.single_hand, single_hand_side=cfg.single_hand_side,
         centric_mode=cfg.centric_mode, frame_mode=cfg.frame_mode,
         action_mode=cfg.action_mode, img_name=cfg.img_name,
-        max_state_tokens=cfg.max_state_tokens,
+        max_ict=cfg.max_ict,
         enable_augmentation=False, stats=None
     )
     all_pos =[]
@@ -286,8 +286,8 @@ def get_dataset_stats(mps_paths: list, cfg: TrainConfig) -> dict:
     step = max(1, num_samples // 10000) 
     
     for i in tqdm(range(0, num_samples, step), desc="Collecting Positions"):
-        state = tmp_ds[i]["x_state"]
-        mask = tmp_ds[i]["state_mask"]
+        state = tmp_ds[i]["x_ict"]
+        mask = tmp_ds[i]["ict_mask"]
         
         # Robustly find Hand tokens (TypeID == 1.0 or 2.0)
         for j in range(state.shape[0]):
@@ -420,8 +420,8 @@ def train_one_epoch(
 
     for batch in loader:
         x_rgb = batch["x_rgb"].to(cfg.device, non_blocking=True)
-        x_state = batch["x_state"].to(cfg.device, non_blocking=True)
-        state_mask = batch["state_mask"].to(cfg.device, non_blocking=True)
+        x_ict = batch["x_ict"].to(cfg.device, non_blocking=True)
+        ict_mask = batch["ict_mask"].to(cfg.device, non_blocking=True)
         
         # Explicit Geometry injection
         x_pcd = batch.get("x_pcd", None)
@@ -442,10 +442,10 @@ def train_one_epoch(
 
         B = x_1.shape[0]
 
-        if not torch.isfinite(x_1).all() or not torch.isfinite(x_state).all():
+        if not torch.isfinite(x_1).all() or not torch.isfinite(x_ict).all():
             raise RuntimeError("NaN found in Dataloader outputs!")
 
-        agg["zero_ratio"].append(is_zero_state(x_state, state_mask).float().mean().detach().cpu().item())
+        agg["zero_ratio"].append(is_zero_state(x_ict, ict_mask).float().mean().detach().cpu().item())
 
         if cfg.use_lr_schedule:
             lr = get_lr_cosine_with_warmup(cfg.lr, global_step, cfg.warmup_steps, total_steps, cfg.min_lr_ratio)
@@ -464,7 +464,7 @@ def train_one_epoch(
         x_t = (1 - t_expand) * x_0 + t_expand * x_1
         v_target = x_1 - x_0
 
-        st_in = _maybe_apply_state_noise(x_state)
+        st_in = _maybe_apply_state_noise(x_ict)
         anchor_uv = batch["anchor_uv"].to(cfg.device, non_blocking=True) if cfg.use_region_attn else None
 
         # --- Aux Targets Assembly ---
@@ -474,12 +474,12 @@ def train_one_epoch(
         if cfg.use_aux_visual_foresight:
             loss_targets["y_2d_trace"] = batch["y_2d_trace"].to(cfg.device, non_blocking=True)
         if cfg.use_aux_temporal_contrastive:
-            loss_targets["x_state_future"] = batch["x_state_future"].to(cfg.device, non_blocking=True)
-            loss_targets["state_mask_future"] = batch["state_mask_future"].to(cfg.device, non_blocking=True)
+            loss_targets["x_ict_future"] = batch["x_ict_future"].to(cfg.device, non_blocking=True)
+            loss_targets["ict_mask_future"] = batch["ict_mask_future"].to(cfg.device, non_blocking=True)
 
         def _forward_and_loss():
             preds = model(
-                x_rgb=x_rgb, x_state=st_in, state_mask=state_mask, 
+                x_rgb=x_rgb, x_ict=st_in, ict_mask=ict_mask, 
                 x_t=x_t, t=t, x_pcd=x_pcd, anchor_uv=anchor_uv
             )
             loss_weights = {"w_pos": cfg.w_pos, "w_rot": cfg.w_rot, "w_g": cfg.w_g, "w_done": cfg.w_done, "w_flow": cfg.w_flow}
@@ -569,8 +569,8 @@ def eval_ode_inference(
 
     for batch in loader:
         x_rgb = batch["x_rgb"].to(cfg.device)
-        x_state = batch["x_state"].to(cfg.device)
-        state_mask = batch["state_mask"].to(cfg.device)
+        x_ict = batch["x_ict"].to(cfg.device)
+        ict_mask = batch["ict_mask"].to(cfg.device)
         x_pcd = batch.get("x_pcd", None)
         if x_pcd is not None: x_pcd = x_pcd.to(cfg.device)
         
@@ -597,7 +597,7 @@ def eval_ode_inference(
 
         for i in range(cfg.num_inference_steps):
             t_tensor = torch.full((B, 1), i * dt, device=cfg.device)
-            out = model(x_rgb=x_rgb, x_state=x_state, state_mask=state_mask, x_t=x_t, t=t_tensor, x_pcd=x_pcd, anchor_uv=anchor_uv)
+            out = model(x_rgb=x_rgb, x_ict=x_ict, ict_mask=ict_mask, x_t=x_t, t=t_tensor, x_pcd=x_pcd, anchor_uv=anchor_uv)
             x_t = x_t + out["v_pred"] * dt
 
         if cfg.single_hand:
@@ -608,7 +608,7 @@ def eval_ode_inference(
         p_gprob = torch.sigmoid(p_glogit)
         n_frames += int(B)
 
-        zero_ratio.append(is_zero_state(x_state, state_mask).float().mean().detach().cpu().item())
+        zero_ratio.append(is_zero_state(x_ict, ict_mask).float().mean().detach().cpu().item())
 
         for k in range(K):
             # Pos Error with safe broadcasting
@@ -639,7 +639,7 @@ def eval_ode_inference(
                 done_total += int(B)
         else:
             # Independent BCE head (trajectory-level, not per-step)
-            done_out = model(x_rgb=x_rgb, x_state=x_state, state_mask=state_mask,
+            done_out = model(x_rgb=x_rgb, x_ict=x_ict, ict_mask=ict_mask,
                              x_t=x_t, t=torch.ones(B, 1, device=cfg.device),
                              x_pcd=x_pcd, anchor_uv=anchor_uv)
             p_done_prob = torch.sigmoid(done_out["done_logit"])  # (B, 1)
@@ -781,7 +781,7 @@ def main(cfg: TrainConfig):
         image_size=cfg.image_size,
         pred_horizon=cfg.pred_horizon,
         single_hand=cfg.single_hand, single_hand_side=cfg.single_hand_side,
-        max_state_tokens=cfg.max_state_tokens,
+        max_ict=cfg.max_ict,
         img_name=cfg.img_name, centric_mode=cfg.centric_mode,
         frame_mode=cfg.frame_mode, action_mode=cfg.action_mode,
         use_pcd_features=cfg.use_pcd_features,
@@ -806,7 +806,7 @@ def main(cfg: TrainConfig):
         image_size=cfg.image_size,
         pred_horizon=cfg.pred_horizon,
         single_hand=cfg.single_hand, single_hand_side=cfg.single_hand_side,
-        max_state_tokens=cfg.max_state_tokens,
+        max_ict=cfg.max_ict,
         img_name=cfg.img_name, centric_mode=cfg.centric_mode,
         frame_mode=cfg.frame_mode, action_mode=cfg.action_mode,
         use_pcd_features=cfg.use_pcd_features,
@@ -828,7 +828,7 @@ def main(cfg: TrainConfig):
     model = FlowMatchingModel(
         single_hand=cfg.single_hand,
         pred_horizon=cfg.pred_horizon,
-        max_state_tokens=cfg.max_state_tokens,
+        max_ict=cfg.max_ict,
         img_size=cfg.image_size, 
         patch_size=cfg.patch_size,
         vision_embed_dim=cfg.vision_embed_dim,
@@ -987,7 +987,7 @@ def main(cfg: TrainConfig):
                             centric_mode=cfg.centric_mode,
                             frame_mode=cfg.frame_mode,
                             action_mode=cfg.action_mode,
-                            max_state_tokens=cfg.max_state_tokens,
+                            max_ict=cfg.max_ict,
                             stats=stats,
                             num_inference_steps=cfg.num_inference_steps,
                             make_video=cfg.make_video,
@@ -1037,7 +1037,7 @@ if __name__ == "__main__":
     parser.add_argument("--centric_mode", type=str, default=None, choices=["object_centric", "ego_centric"])
     parser.add_argument("--frame_mode", type=str, default=None, choices=["anchor_frame", "camera_frame"])
     parser.add_argument("--action_mode", type=str, default=None, choices=["absolute", "delta"])
-    parser.add_argument("--max_state_tokens", type=int, default=None)
+    parser.add_argument("--max_ict", type=int, default=None)
     parser.add_argument("--hand_tracking_method", type=str, default=None,
                         choices=["aria_mps", "mediapipe", "wilor", "hamer"],
                         help="Hand tracking method to use for training data")
@@ -1176,7 +1176,7 @@ if __name__ == "__main__":
     if args.pred_horizon is not None: cfg.pred_horizon = args.pred_horizon
     if args.single_hand: cfg.single_hand = True
     if args.single_hand_side is not None: cfg.single_hand_side = args.single_hand_side
-    if args.max_state_tokens is not None: cfg.max_state_tokens = args.max_state_tokens
+    if args.max_ict is not None: cfg.max_ict = args.max_ict
     
     # Paradigm Ablations
     if args.img_name is not None: cfg.img_name = args.img_name if args.img_name != 'None' else None
@@ -1305,7 +1305,7 @@ if __name__ == "__main__":
 #     --img_name "rgb_WoArm_WArmObjKpts.png" --image_size 240 320 \
 #     --centric_mode "object_centric" --frame_mode "anchor_frame" \
 #     --action_mode "absolute" \
-#     --max_state_tokens 8 \
+#     --max_ict 8 \
 #     --use_region_attn \
 #     --use_ot_cfm \
 #     --w_flow 3.0 --w_pos 5.0 --w_rot 1.0 --w_g 10.0 --w_done 5.0
