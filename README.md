@@ -50,7 +50,7 @@ methods (MediaPipe, WiLoR, HaMeR).
 
 ## Data Collection
 
-See [`datacollection/README_data_collection.md`](datacollection/README_data_collection.md)
+See [`datacollection/README.md`](datacollection/README.md)
 for the end-to-end guide on recording your own Project Aria data and running
 MPS (SLAM + hand tracking) on it.
 
@@ -72,8 +72,8 @@ python scripts/download_data.py --mode full
 ```
 
 The sample downloads under `./data/` by default (pass `--out <dir>` to change the
-location). See [`docs/preprocess.md`](docs/preprocess.md) for all download modes (including
-the full dataset) and a plain-`huggingface_hub` recipe. More recordings to follow.
+location). See [`preprocess/README.md`](preprocess/README.md) for all download modes
+(including the full dataset) and a plain-`huggingface_hub` recipe. More recordings to follow.
 
 ---
 
@@ -94,7 +94,7 @@ python -m preprocess.Preprocess \
 This regenerates everything under `…/preprocess/`. To compare against the precomputed
 output instead of running the GPU pipeline, grab it with
 `python scripts/download_data.py --mode full`. See
-**[`docs/preprocess.md`](docs/preprocess.md)** for the full data layout and download modes.
+**[`preprocess/README.md`](preprocess/README.md)** for the full data layout and download modes.
 
 ---
 

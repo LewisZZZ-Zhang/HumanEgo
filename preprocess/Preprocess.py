@@ -630,9 +630,9 @@ class Preprocess:
         self.preprocess_camtriangulator()
         self.preprocess_lama()
         self.preprocess_visualkpts()
-        self.preprocess_hands()
+        # self.preprocess_hands()
         self.preprocess_datasetgen()
-        self.preprocess_hand_tracking_comparison()
+        # self.preprocess_hand_tracking_comparison()
 
 
 if __name__ == "__main__":

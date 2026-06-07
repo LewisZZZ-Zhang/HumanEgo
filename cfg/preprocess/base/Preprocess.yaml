@@ -28,4 +28,4 @@ DatasetGen_path: "./cfg/preprocess/base/DatasetGen.yaml"
 # will generate their own per-frame JSON files (e.g., mediapipe_hands.json).
 # All results are merged into training_data.json by DatasetGen.
 # Uncomment/modify to enable ablation hand detection methods.
-hand_tracking_methods: ["aria_mps", "mediapipe", "wilor", "hamer"]
+hand_tracking_methods: ["aria_mps"] # "mediapipe", "wilor", "hamer"
