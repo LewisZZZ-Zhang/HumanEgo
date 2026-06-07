@@ -50,6 +50,10 @@ methods (MediaPipe, WiLoR, HaMeR).
 
 ## Data Collection
 
+<p align="center">
+  <img src="assets/data_collection.gif" alt="HumanEgo data collection — anyone, anytime, anywhere, with only 30 minutes of data" width="100%" />
+</p>
+
 See [`datacollection/README.md`](datacollection/README.md)
 for the end-to-end guide on recording your own Project Aria data and running
 MPS (SLAM + hand tracking) on it.
