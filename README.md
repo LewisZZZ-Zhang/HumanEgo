@@ -52,6 +52,47 @@ methods (MediaPipe, WiLoR, HaMeR).
 
 ---
 
+## Quick Start
+
+The fastest way to run the whole pipeline end-to-end — download, preprocess, and
+train on just a couple of recordings. The `HumanEgo` training job holds out the
+first recording (`mps_serve_bread_000_vrs`) for evaluation and trains on the
+rest, so download two.
+
+**1. Download two recordings** — inputs only, ~1.2 GB
+
+```bash
+pip install huggingface_hub
+python scripts/download_data.py --task serve_bread --num 2 --input-only
+```
+
+Fetches `mps_serve_bread_000_vrs` and `mps_serve_bread_001_vrs` into
+`./data/serve_bread/aria/`, skipping the precomputed `preprocess/` output so you
+run the pipeline yourself. See
+[Download the released data](#download-the-released-data) for more options.
+
+**2. Preprocess both**
+
+```bash
+python -m preprocess.Preprocess --mps_path ./data/serve_bread/aria/mps_serve_bread_000_vrs --task serve_bread
+python -m preprocess.Preprocess --mps_path ./data/serve_bread/aria/mps_serve_bread_001_vrs --task serve_bread
+```
+
+Regenerates each recording's `preprocess/` folder. See [Preprocess](#preprocess)
+for details.
+
+**3. Train**
+
+```bash
+python -m training.FlowMatchingTrainer --task serve_bread --use_cfg --job HumanEgo
+```
+
+Trains on `mps_serve_bread_001_vrs` and evaluates on the held-out
+`mps_serve_bread_000_vrs` (config: `cfg/training/serve_bread/HumanEgo.yaml`).
+See [Training](#training) for details.
+
+---
+
 ## Data Collection
 
 <p align="center">
