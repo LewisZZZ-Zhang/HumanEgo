@@ -42,8 +42,8 @@
 
 There are three ways to use this repo, in increasing order of effort:
 
-1. **[Quick Start](#quick-start)** — run the whole pipeline end-to-end on two
-   sample recordings, as a smoke test.
+1. **[Quick Start in 5 Minutes](#quick-start-in-5-minutes)** — run the whole pipeline
+   end-to-end on two sample recordings, as a smoke test.
 2. **[Train on the HumanEgo Dataset](#train-on-the-humanego-dataset)** — download
    our full released data (with precomputed labels) and train, no hardware needed.
 3. **[Train Your Own Policy](#train-your-own-policy)** — collect your own
@@ -61,13 +61,22 @@ conda activate humanego
 bash setup.sh
 ```
 
-This installs PyTorch (with CUDA), the vision foundation models we use
-(SAM 2, Grounding DINO, CoTracker, Orient-Anything V2), and the hand-tracking
-methods (MediaPipe, WiLoR, HaMeR).
+By default this installs everything the released pipeline needs: PyTorch (with
+CUDA) and the vision foundation models we use (SAM 2, Grounding DINO, CoTracker,
+Orient-Anything V2). The pipeline relies on Project Aria's built-in MPS hand
+tracking, so the alternative hand-detection methods (MediaPipe, WiLoR, HaMeR) and
+the robot/camera hardware drivers are **skipped by default** to keep the install
+lean. Enable them per-run only if you need them:
+
+```bash
+SKIP_HAND=0     bash setup.sh   # + MediaPipe / WiLoR / HaMeR (alternative hand-tracking methods)
+SKIP_HARDWARE=0 bash setup.sh   # + pyrealsense2 / trossen-arm (real-robot collection & deployment)
+PREDOWNLOAD=1   bash setup.sh   # pre-download model weights now (else fetched on first run)
+```
 
 ---
 
-## Quick Start
+## Quick Start in 5 Minutes
 
 The fastest way to run the whole pipeline end-to-end — download, preprocess, and
 train on just a couple of recordings. The `HumanEgo` training job holds out the
@@ -268,7 +277,22 @@ and [Orient-Anything](https://github.com/SpatialVision/Orient-Anything).
 
 ---
 
+## License
+
+Released under the [MIT License](LICENSE).
+
+---
+
+## Contact
+
+Questions are welcome! Reach out to Zhi (Leo) Wang at
+[tx.leo.wz@gmail.com](mailto:tx.leo.wz@gmail.com) (WeChat: `tx-leo-wz`).
+
+---
+
 <h2 id="bibtex">BibTeX</h2>
+
+If you find this work helpful, we would greatly appreciate it if you cite our paper!
 
 ```bibtex
 @misc{humanego2026,
