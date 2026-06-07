@@ -64,16 +64,19 @@ required. A sample recording is available now so you can test the pipeline end-t
 ```bash
 pip install huggingface_hub
 
-# one sample recording, input only (~0.6 GB) — enough to run preprocessing yourself
-python scripts/download_data.py --mode test
+# one serve_bread recording (default), with precomputed output (~2 GB, auto-extracted)
+python scripts/download_data.py
 
-# or input + the precomputed preprocess output (~2 GB, auto-extracted)
-python scripts/download_data.py --mode full
+# the first 20 serve_bread recordings (use --task all / --num all for everything)
+python scripts/download_data.py --task serve_bread --num 20
+
+# input only (~0.6 GB), to run preprocessing yourself
+python scripts/download_data.py --input-only
 ```
 
-The sample downloads under `./data/` by default (pass `--out <dir>` to change the
-location). See [`preprocess/README.md`](preprocess/README.md) for all download modes
-(including the full dataset) and a plain-`huggingface_hub` recipe. More recordings to follow.
+Pick the task with `--task {serve_bread,water_flowers,all}`, the count with `--num N|all`,
+and the destination with `--out <dir>`. See [`preprocess/README.md`](preprocess/README.md)
+for all options, the full output-file reference, and a plain-`huggingface_hub` recipe.
 
 ---
 

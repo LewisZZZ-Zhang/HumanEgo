@@ -17,17 +17,25 @@ pip install huggingface_hub        # for downloading
 # and follow the repo README to install the full preprocessing environment
 ```
 
-**Download a sample recording** (`scripts/download_data.py`):
+**Download data** (`scripts/download_data.py`) — pick a task and how many recordings:
 
 ```bash
-# (a) INPUT ONLY (~0.6 GB) — run the pipeline yourself and reproduce every output
-python scripts/download_data.py --mode test
+# 1 serve_bread recording (default), WITH precomputed output (~2 GB); all_data.tar auto-extracted
+python scripts/download_data.py
 
-# (b) INPUT + PRECOMPUTED OUTPUT (~2 GB) — skip the GPU pipeline; all_data.tar auto-extracted
-python scripts/download_data.py --mode full
+# the first 20 serve_bread recordings, with precomputed output
+python scripts/download_data.py --task serve_bread --num 20
+
+# INPUT ONLY (~0.6 GB/recording) — to run the pipeline yourself
+python scripts/download_data.py --task serve_bread --num 1 --input-only
 ```
 
-Use `--out <dir>` to download somewhere other than `./data`.
+| flag | meaning |
+|------|---------|
+| `--task` | `serve_bread` \| `water_flowers` \| `all` (default `serve_bread`) |
+| `--num` | how many recordings — first N, or `all` (default `1`) |
+| `--input-only` | inputs only; skip the precomputed `preprocess/` output |
+| `--out` | download location (default `./data`) |
 
 **Run the pipeline:**
 
@@ -203,14 +211,17 @@ python -m preprocess.Preprocess --mps_path <recording_dir> --task <task> \
 ## 6. Downloading more data
 
 ```bash
-# everything, but skip the large per-frame all_data.tar archives
-python scripts/download_data.py --mode all
+# an entire task (all serve_bread recordings), with precomputed output
+python scripts/download_data.py --task serve_bread --num all
 
-# everything, including all_data.tar (very large), auto-extracted
-python scripts/download_data.py --mode all --with-tar
+# the whole dataset (serve_bread + water_flowers) — large
+python scripts/download_data.py --task all --num all
+
+# inputs only, to reprocess everything yourself
+python scripts/download_data.py --task all --num all --input-only
 ```
 
-`all_data.tar` is just the per-frame files packed into one archive (so the dataset stays at
-a few dozen files per recording instead of hundreds of thousands). It is fully regenerable by
-running preprocessing, so you only need it to get the precomputed per-frame results without
-running the pipeline.
+`all_data.tar` is just the per-frame files packed into one archive (so the dataset stays at a
+few dozen files per recording instead of hundreds of thousands). It is auto-extracted on
+download and is fully regenerable by running preprocessing, so you only need it to get the
+precomputed per-frame results without running the pipeline.
