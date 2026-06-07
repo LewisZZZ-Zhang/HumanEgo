@@ -274,15 +274,6 @@ camera/robot/perception drivers, and the parameter-tuning guide.
 
 ---
 
-## TODO
-
-We are actively releasing the following — check back soon.
-
-- [ ] Release a 3-minute quick-start tutorial
-- [ ] Release a pretrained model (for inference demo)
-
----
-
 ## Acknowledgements
 
 This project builds on excellent open-source work, including
