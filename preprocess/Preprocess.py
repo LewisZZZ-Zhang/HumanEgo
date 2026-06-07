@@ -645,7 +645,7 @@ if __name__ == "__main__":
                         help="Path to the base Preprocess.yaml")
     
     parser.add_argument("--task", type=str, default=None, 
-                        help="Task name (e.g., downstack_cups) to load specific YAML overrides")
+                        help="Task name (e.g., serve_bread) to load specific YAML overrides")
     
     parser.add_argument("--range", type=int, nargs=2, metavar=('START', 'END'), 
                         help="Numeric range of indices to process (e.g., --range 0 10)")

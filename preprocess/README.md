@@ -192,18 +192,73 @@ it documents exactly which settings produced the outputs.
 
 ## 5. Configuration
 
-Configs live under `cfg/preprocess/`:
+Configs live under `cfg/preprocess/` and are compiled per run (`load_cfg_dynamic_task`):
 
-- `cfg/preprocess/base/Preprocess.yaml` — the master config; recursively loads each module's
-  YAML and sets `hand_tracking_methods`.
-- `cfg/preprocess/base/<Module>.yaml` — per-module settings (AriaCam, DINOSAM, CoTracker, …).
-- `cfg/preprocess/tasks/<task>.yaml` — per-task overrides selected by `--task`, e.g.
-  `serve_bread.yaml` sets the DINO prompts (`obj1: "piece of bread"`, `obj2: "a plate"`) and
-  which hand to track.
+- **`cfg/preprocess/base/Preprocess.yaml`** — the master config. It points to each module's
+  YAML (`AriaCam_path`, `DINOSAM_path`, …) and sets `hand_tracking_methods`.
+- **`cfg/preprocess/base/<Module>.yaml`** — per-module **defaults**, one file per pipeline
+  stage (`AriaCam`, `AriaHands`, `AriaPhases`, `DINOSAM`, `KptsSelector`, `CoTracker`,
+  `CamTriangulator`, `Lama`, `VisualKpts`, `DatasetGen`). Every field is documented inline
+  in these files — read them for the full set of knobs and their defaults.
+- **`cfg/preprocess/tasks/<task>.yaml`** — a small per-task **override** selected by
+  `--task <task>`, deep-merged over the base so you only specify what differs for your task.
 
 ```bash
 python -m preprocess.Preprocess --mps_path <recording_dir> --task <task> \
     [--cfg_path cfg/preprocess/base/Preprocess.yaml] [--no-video] [--no-gif]
+```
+
+> If `cfg/preprocess/tasks/<task>.yaml` is missing, preprocessing still runs but uses the
+> **base defaults** — whose `dinosam_prompt` is a placeholder (`"a pretty cat ."`), so it
+> won't detect *your* objects. A task file is therefore effectively required.
+
+### 5.1 Task-config fields
+
+Each top-level key targets the module of the same name; the values are deep-merged onto that
+module's base YAML. The fields that typically vary per task:
+
+| Key | Stage | Meaning |
+|-----|-------|---------|
+| `DINOSAM.dinosam_prompt.{obj1,obj2,…}` | dinosam | **Required.** Open-vocabulary [Grounding DINO](https://github.com/IDEA-Research/GroundingDINO) text prompt for each manipulated object — end each phrase with a space + period, e.g. `"a plate ."`. The keys `obj1`, `obj2`, … become the object ids used everywhere downstream. |
+| `DINOSAM.dinosam_prompt.arm` | dinosam | Prompt for the hand/arm that gets segmented and inpainted (usually `"human arms . human hands ."`). |
+| `AriaHands.hand_selection` | aria | Which hand to keep: `"right"`, `"left"`, `"auto"` (highest confidence), or `"none"` (both). |
+| `AriaHands.grasp_threshold` | aria | Fingertip distance (m) below which a grasp is detected — tune to your object size. |
+| `AriaPhases.{v_stop_thresh,finished_frames,manip_clean_manual_offset}` | aria | Phase-segmentation tuning: stop-speed threshold (m/s), how many trailing frames to mark *finished*, and how much to trim around the manipulation boundary. |
+| `CamTriangulator.pose_method.{obj1,…,default}` | camtriangulator | Per-object 3D orientation method: `"vlm"` (Orient-Anything, semantic), `"pca1"` (star-shaped geometric), or `"pca2"` (object-centric; handles upright/fallen objects). |
+| `DatasetGen.disable_kinematic_latching_{left,right}` | datasetgen | Set `true` to keep an object fixed at its initial pose instead of latching it to the hand on grasp. |
+
+For every other tunable field and its default, see the matching
+`cfg/preprocess/base/<Module>.yaml`.
+
+### 5.2 Adding a new task
+
+1. Create `cfg/preprocess/tasks/<your_task>.yaml`.
+2. Set `DINOSAM.dinosam_prompt` for each object you manipulate (`obj1`, `obj2`, …) plus the
+   `arm` prompt.
+3. Set `AriaHands.hand_selection` (and `grasp_threshold` if needed), and pick a
+   `CamTriangulator.pose_method` per object.
+4. Run `python -m preprocess.Preprocess --mps_path <recording_dir> --task <your_task>`.
+5. Verify: check `…/preprocess/dinosam_mask_obj*.png` to confirm the prompts segment the
+   right objects, and the `…/preprocess/cfg/` snapshot to confirm your overrides were
+   applied; iterate on the prompts/thresholds as needed.
+
+Example — `cfg/preprocess/tasks/serve_bread.yaml`:
+
+```yaml
+AriaHands:
+  hand_selection: "right"            # serve_bread is one-handed (right)
+
+DINOSAM:
+  dinosam_prompt:
+    obj1: "piece of bread ."
+    obj2: "a plate ."
+    arm:  "human arms . human hands ."
+
+CamTriangulator:
+  pose_method:
+    obj1: "pca1"
+    obj2: "pca1"
+    default: "pca1"
 ```
 
 ---

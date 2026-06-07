@@ -192,8 +192,12 @@ MPS (SLAM + hand tracking) on it. The resulting data should look like this:
   <img src="assets/data_collection.webp" alt="HumanEgo preprocessing visualization" width="100%" />
 </p>
 
-Turn raw MPS output into training-ready data — point `--mps_path` at the MPS
-folder from Step 1:
+Turn raw MPS output into training-ready data. First, create a task config
+`cfg/preprocess/tasks/<your_task>.yaml` describing **your** task — the
+open-vocabulary detection prompts for each object, which hand(s) to track, etc.
+`--task <your_task>` merges it over the defaults in `cfg/preprocess/base/`. See
+[Adding a new task](preprocess/README.md#52-adding-a-new-task) for the
+field-by-field reference. Then point `--mps_path` at the MPS folder from Step 1 and run:
 
 ```bash
 python -m preprocess.Preprocess --mps_path ./data/<your_mps_folder> --task <your_task>
@@ -201,7 +205,7 @@ python -m preprocess.Preprocess --mps_path ./data/<your_mps_folder> --task <your
 
 This regenerates everything under `…/preprocess/`. See
 **[`preprocess/README.md`](preprocess/README.md)** for the full data layout,
-the output-file reference, and download options.
+the output-file reference, the task-config reference, and download options.
 
 ### Step 3: Training
 
