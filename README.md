@@ -168,8 +168,8 @@ python -m preprocess.Preprocess \
 
 This regenerates everything under `…/preprocess/`. To compare against the precomputed
 output instead of running the GPU pipeline, grab it with
-`python scripts/download_data.py --mode full`. See
-**[`preprocess/README.md`](preprocess/README.md)** for the full data layout and download modes.
+`python scripts/download_data.py --task serve_bread --num 1`. See
+**[`preprocess/README.md`](preprocess/README.md)** for the full data layout and download options.
 
 ---
 
