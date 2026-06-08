@@ -83,7 +83,10 @@ info "NumPy installed: $($PYTHON -c 'import numpy; print(numpy.__version__)')"
 # chumpy needs numpy already installed and --no-build-isolation
 # chumpy 0.70 — required by smplx/hamer/wilor for MANO hand model
 $PIP install --no-build-isolation chumpy
-info "chumpy installed: $($PYTHON -c 'import chumpy; print(chumpy.__name__)')"
+# Don't `import chumpy` here: chumpy 0.70 uses inspect.getargspec (removed in Python
+# 3.11) and only imports cleanly AFTER the patch in step [6/7]. Confirm via pip
+# metadata so the install doesn't print a scary (but harmless) traceback.
+info "chumpy installed: $($PIP show chumpy 2>/dev/null | awk '/^Version:/{print $2}') (made importable by the patch in step [6/7])"
 
 # ==============================================================================
 # [3/7] Core dependencies from requirements.txt

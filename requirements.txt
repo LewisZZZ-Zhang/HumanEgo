@@ -50,8 +50,13 @@ pyquaternion>=0.9
 smplx>=0.1.28
 
 # ── Project Aria & Robot Hardware ──
+# NOTE: projectaria-client-sdk 1.1.0 hard-pins projectaria-tools==1.5.2a1, but the
+# pipeline needs 1.7.1 — setup.sh installs both with --no-deps, so pip prints a
+# (harmless) resolver-conflict warning about that pin. termcolor is a client-sdk CLI
+# dependency; listing it here silences the "termcolor is not installed" half.
 projectaria-tools==1.7.1
 projectaria-client-sdk==1.1.0
+termcolor>=2.0
 pyrealsense2>=2.50
 trossen-arm>=1.8
 

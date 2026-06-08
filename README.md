@@ -97,7 +97,6 @@ rest, so download two.
 **1. Download two recordings** — inputs only, ~1.2 GB
 
 ```bash
-pip install huggingface_hub
 python scripts/download_data.py --task serve_bread --num 2 --input-only
 ```
 
@@ -106,6 +105,14 @@ Fetches `mps_serve_bread_000_vrs` and `mps_serve_bread_001_vrs` into
 run the pipeline yourself. See
 [Train on the HumanEgo Dataset](#train-on-the-humanego-dataset) for the full
 dataset and all download options.
+
+**Prefer to skip preprocessing?** Drop `--input-only` to download the two recordings
+**with the precomputed `preprocess/` output** (~4 GB, auto-extracted), then skip
+Step 2 and jump straight to **3. Train**:
+
+```bash
+python scripts/download_data.py --task serve_bread --num 2
+```
 
 **2. Preprocess both**
 
