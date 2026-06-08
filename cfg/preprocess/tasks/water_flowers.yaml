@@ -12,7 +12,7 @@ DINOSAM:
 CamTriangulator:
   pose_method:
     obj1: "vlm"
-    obj3: "vlm"
+    obj2: "vlm"
     default: "vlm"
 
 DatasetGen:
