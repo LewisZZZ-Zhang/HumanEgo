@@ -1,3 +1,7 @@
+# HumanEgo training config for the `serve_bread` task.
+# Loads the released serve_bread dataset (data_sources: aria) from
+# ./data/serve_bread/aria/mps_serve_bread_*_vrs.
+
 # ---- Optimization & Schedule ----
 epochs: 400
 batch_size: 32

@@ -1,9 +1,6 @@
-# HumanEgo training recipe for the `water_flowers` task.
-#
-# Hyperparameters are copied from the AriaMimic research config
-# cfg/training/water_flowers/00_Baseline_v3_WPos5Rot1G10.yaml. Only the data
-# section differs: it uses `data_sources` (like serve_bread/HumanEgo.yaml) so it
-# loads the released dataset layout ./data/water_flowers/aria/mps_water_flowers_*_vrs.
+# HumanEgo training config for the `water_flowers` task.
+# Loads the released water_flowers dataset (data_sources: aria) from
+# ./data/water_flowers/aria/mps_water_flowers_*_vrs.
 
 # ---- Optimization & Schedule ----
 epochs: 400
