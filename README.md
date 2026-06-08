@@ -34,6 +34,10 @@
   <a href="https://leo-tx-humanego-gallery.static.hf.space"><img src="https://img.shields.io/badge/Data_Gallery-Browse_122_clips-ff6a00?style=for-the-badge&logo=huggingface&logoColor=white" alt="Data Gallery" /></a>
 </p>
 
+<p align="center">
+  <img src="https://komarev.com/ghpvc/?username=tx-leo-humanego&base=5000&label=Views&color=E8772E&style=for-the-badge" alt="Repo views" />
+</p>
+
 ---
 
 ## Overview
