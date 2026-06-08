@@ -97,6 +97,10 @@ mv "mps_${NAME}_vrs/vrs_health_check.json" "mps_${NAME}_vrs/else/vrs_health_chec
 mv "mps_${NAME}_vrs/vrs_health_check_slam.json" "mps_${NAME}_vrs/else/vrs_health_check_slam.json"
 ```
 
+> **Tip:** the shipped wrapper [`datacollection/AriaMPS.py`](AriaMPS.py) does all of the
+> above in one step — put your Aria credentials in `cfg/datacollection/AriaMPS.yaml`, then
+> run `python -m datacollection.AriaMPS --vrs_file ./data/${NAME}.vrs`.
+
 For an 80-second data, it usually takes around 20-25 minutes to process a single VRS file depending on network conditions and server load.
 For a 25-second data, it usually takes around 10 minutes.
 
@@ -123,22 +127,6 @@ After this, it should be:
 
 Now you finish Aria MPS process and get slam & hand tracking results.
 
-### Organize for the pipeline
-
-Preprocessing accepts any `--mps_path`, but **training** auto-discovers recordings under
-`data/<task>/aria/mps_<task>_<id>_vrs/`. Move your processed recording into that layout
-(run from `data/`):
-
-```
-TASK="serve_bread"   # your task name
-IDX="000"            # zero-padded recording index (000, 001, ...)
-mkdir -p "${TASK}/aria"
-mv "mps_${NAME}_vrs" "${TASK}/aria/mps_${TASK}_${IDX}_vrs"
-```
-
-The result is `data/<task>/aria/mps_<task>_<id>_vrs/`, ready for
-[preprocessing](../preprocess/README.md) and [training](../training/README.md).
-
 ## Try to visualize the data
 ### Visualize the aria sensors
 ```
@@ -153,3 +141,19 @@ viewer_mps --vrs "./data/mps_TEST_vrs/sample.vrs" \
 --hands_all "./data/mps_TEST_vrs/hand_tracking/hand_tracking_results.csv" \
 --web
 ```
+
+## Organize for the pipeline
+
+Preprocessing accepts any `--mps_path`, but **training** auto-discovers recordings under
+`data/<task>/aria/mps_<task>_<id>_vrs/`. Once you're happy with the recording, move it
+into that layout (run from `data/`):
+
+```
+TASK="serve_bread"   # your task name
+IDX="000"            # zero-padded recording index (000, 001, ...)
+mkdir -p "${TASK}/aria"
+mv "mps_${NAME}_vrs" "${TASK}/aria/mps_${TASK}_${IDX}_vrs"
+```
+
+The result is `data/<task>/aria/mps_<task>_<id>_vrs/`, ready for
+[preprocessing](../preprocess/README.md) and [training](../training/README.md).

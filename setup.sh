@@ -28,7 +28,7 @@
 #   PREDOWNLOAD=0    (default)  don't pre-download weights;       set 1 to fetch now
 #
 # Examples:
-#   SKIP_HAND=0 bash setup.sh                  # also install hand tracking (needed to preprocess)
+#   SKIP_HAND=0 bash setup.sh                  # + MediaPipe/WiLoR/HaMeR (only for the hand-tracking ablation; the released aria_mps pipeline does NOT need them)
 #   SKIP_HARDWARE=0 SKIP_HAND=0 bash setup.sh  # full install (robot + camera + hands)
 #
 # ==============================================================================

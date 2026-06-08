@@ -2,9 +2,9 @@
 # HumanEgo — dual-arm inference config (reference template)
 # =============================================================================
 # A single annotated file wiring the whole stack (run_inference.py reads it).
-# The production setup splits this across Inference/Policy/Control/ObjectCentric/
-# CamRS/RobotArmTrossen yamls (see cfg/inference/<task>/) — consolidated here for
-# clarity. Tune the values marked (TUNE); set the paths marked (SET) for your rig.
+# Our internal setup splits this across several per-module yamls; it is consolidated
+# here into one file for clarity. Tune the values marked (TUNE); set the paths marked
+# (SET) for your rig.
 # =============================================================================
 
 # ---- POLICY: which checkpoint to run, and the flow-matching solver -----------

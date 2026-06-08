@@ -2,7 +2,8 @@
 
 Train a HumanEgo **flow-matching policy** from preprocessed Aria data. The policy
 predicts a short horizon of future 6-DoF hand (and object) motion from an egocentric
-image plus a set of *ICTs* (the hands and objects in the scene). This doc
+image plus a set of *Interaction-Centric Tokens (ICTs)* — the hands and objects in
+the scene. This doc
 covers (1) how to train, (2) the data it expects, (3) the files in `training/`,
 (4) what a run produces, and (5) every config parameter + how to add your own task.
 
@@ -26,7 +27,8 @@ python -m training.FlowMatchingTrainer --task serve_bread --use_cfg --job HumanE
 
 ## 2. Data it expects
 
-Training consumes the **preprocessing output** (Step 2), one folder per recording:
+Training consumes the **preprocessing output** (the
+[preprocessing](../preprocess/README.md) step), one folder per recording:
 
 ```
 data/<task>/aria/
