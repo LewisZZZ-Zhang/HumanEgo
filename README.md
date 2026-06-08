@@ -314,7 +314,10 @@ and [Orient-Anything](https://github.com/SpatialVision/Orient-Anything).
 
 ## License
 
-Released under the [MIT License](LICENSE).
+HumanEgo is released under the [PolyForm Noncommercial License 1.0.0](LICENSE): free
+for any **noncommercial** use, including academic and nonprofit research. **Commercial
+use (by or for a company) requires a separate paid license** — please get in touch
+(see [Contact](#contact)).
 
 ---
 
