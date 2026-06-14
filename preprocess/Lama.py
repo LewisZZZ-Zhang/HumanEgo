@@ -42,14 +42,18 @@ import uuid
 import atexit
 import tempfile
 import subprocess
+import ctypes
+import glob
+import site
 import cv2
 import numpy as np
-import onnxruntime as ort
 from huggingface_hub import hf_hub_download
 
 from utils.utils_vis import draw_glass_rect, draw_status_bar
 from utils.utils_vis import C_CYAN, C_GREEN, C_RED, C_GOLD, C_WHITE, C_GRAY
 from utils.utils_io import load_cfg
+
+_PRELOADED_CUDA_LIBS = []
 
 def setup_cuda_paths():
     """
@@ -66,14 +70,64 @@ def setup_cuda_paths():
             if os.path.isdir(lib_dir): lib_paths.append(lib_dir)
         except ImportError: pass
 
+    for site_dir in site.getsitepackages():
+        nvidia_dir = os.path.join(site_dir, "nvidia")
+        if not os.path.isdir(nvidia_dir):
+            continue
+        for root, dirs, _ in os.walk(nvidia_dir):
+            if os.path.basename(root) == "lib":
+                lib_paths.append(root)
+                dirs[:] = []
+
+    lib_paths = list(dict.fromkeys(lib_paths))
+
     if sys.platform.startswith('linux'):
         current_ld = os.environ.get('LD_LIBRARY_PATH', '')
         new_ld = ':'.join(lib_paths +[current_ld])
         os.environ['LD_LIBRARY_PATH'] = new_ld
 
+        # LD_LIBRARY_PATH updates after process start are not always enough for
+        # dlopen. Preload CUDA libs so ONNX Runtime's CUDA provider can resolve
+        # its transitive dependencies from pip-installed NVIDIA wheels.
+        for lib_dir in lib_paths:
+            for lib_path in sorted(glob.glob(os.path.join(lib_dir, "lib*.so*"))):
+                try:
+                    _PRELOADED_CUDA_LIBS.append(ctypes.CDLL(lib_path, mode=ctypes.RTLD_GLOBAL))
+                except OSError:
+                    pass
+
 # Execute CUDA path setup immediately upon module import
 setup_cuda_paths()
 
+import onnxruntime as ort
+
+
+def _make_ort_session_options():
+    """Create explicit ORT threading options to avoid CPU-affinity failures."""
+    options = ort.SessionOptions()
+    options.intra_op_num_threads = int(os.environ.get("ORT_INTRA_OP_NUM_THREADS", "4"))
+    options.inter_op_num_threads = int(os.environ.get("ORT_INTER_OP_NUM_THREADS", "1"))
+    options.log_severity_level = int(os.environ.get("ORT_LOG_SEVERITY_LEVEL", "3"))
+    return options
+
+
+def _require_cuda_provider():
+    """Fail early unless ONNX Runtime's CUDA provider can be loaded."""
+    if "CUDAExecutionProvider" not in ort.get_available_providers():
+        raise RuntimeError("ONNX Runtime was installed without CUDAExecutionProvider.")
+
+    provider_lib = os.path.join(os.path.dirname(ort.__file__), "capi", "libonnxruntime_providers_cuda.so")
+    if not os.path.exists(provider_lib):
+        raise RuntimeError(f"ONNX Runtime CUDA provider library not found: {provider_lib}")
+
+    try:
+        _PRELOADED_CUDA_LIBS.append(ctypes.CDLL(provider_lib, mode=ctypes.RTLD_GLOBAL))
+    except OSError as exc:
+        raise RuntimeError(
+            "ONNX Runtime CUDA provider could not load. "
+            "Install matching CUDA/cuDNN libraries and ensure the GPU driver is visible. "
+            f"Original error: {exc}"
+        ) from exc
 
 # ==============================================================================
 # [Engine] LaMa Inpainting Engine
@@ -91,6 +145,7 @@ class LamaEngine:
         
         # Download or retrieve cached model from HuggingFace Hub
         model_path = hf_hub_download(repo_id=self.cfg.lama_repo_id, filename=self.cfg.lama_filename)
+        _require_cuda_provider()
         
         # Configure ONNX Runtime Providers for optimal GPU execution
         providers =[
@@ -99,13 +154,17 @@ class LamaEngine:
                 'arena_extend_strategy': 'kNextPowerOfTwo',
                 'cudnn_conv_algo_search': 'EXHAUSTIVE',
                 'do_copy_in_default_stream': True,
-            }),
-            'CPUExecutionProvider'
+            })
         ]
         
-        self.session = ort.InferenceSession(model_path, providers=providers)
+        self.session = ort.InferenceSession(
+            model_path,
+            sess_options=_make_ort_session_options(),
+            providers=providers,
+        )
         if 'CUDAExecutionProvider' not in self.session.get_providers():
-            print("║ [Warning] CUDA not available for LaMa, falling back to CPU!")
+            raise RuntimeError(f"LaMa must run on GPU, but active providers are: {self.session.get_providers()}")
+        print(f"║ [System] LaMa active providers: {self.session.get_providers()}")
 
     def inpaint(self, image: np.ndarray, mask: np.ndarray) -> np.ndarray:
         """

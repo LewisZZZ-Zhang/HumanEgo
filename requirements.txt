@@ -14,7 +14,7 @@
 --extra-index-url https://download.pytorch.org/whl/cu121
 torch==2.5.1
 torchvision==0.20.1
-xformers>=0.0.28
+xformers==0.0.28.post3
 
 # ── Scientific Computing ──
 numpy>=1.24
@@ -33,7 +33,8 @@ pyrender>=0.1.45
 trimesh>=4.0
 
 # ── Deep Learning Models ──
-transformers>=4.40,<5    # 5.x breaks Grounding DINO's AutoProcessor (preprocess dinosam stage)
+transformers==4.46.3     # 5.x breaks Grounding DINO's AutoProcessor (preprocess dinosam stage)
+tokenizers==0.20.3
 sam2>=1.0
 diffusers>=0.25
 timm>=0.9

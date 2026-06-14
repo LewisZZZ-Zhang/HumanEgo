@@ -223,6 +223,7 @@ def _worker_loop(cfg_path: str):
     import torch
     import sys
     import json
+    import traceback
     
     def _send(obj):
         sys.stdout.write(json.dumps(obj) + "\n")
@@ -245,7 +246,7 @@ def _worker_loop(cfg_path: str):
         
     except Exception as e:
         # If initialization fails, send JSON error and exit
-        _send({"ok": False, "error": f"Worker init failed: {str(e)}"})
+        _send({"ok": False, "error": f"Worker init failed: {str(e)}\n{traceback.format_exc()}"})
         sys.exit(1)
 
     # Listen for processing requests from parent via stdin
