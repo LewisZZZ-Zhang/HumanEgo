@@ -330,6 +330,14 @@ use (by or for a company) requires a separate paid license** — please get in t
 Questions are welcome! Reach out to Zhi (Leo) Wang at
 [tx.leo.wz@gmail.com](mailto:tx.leo.wz@gmail.com) (WeChat: `tx-leo-wz`).
 
+**Join our WeChat group** to discuss HumanEgo, ask questions, and stay updated — scan the QR code below:
+
+<p align="center">
+  <img src="assets/WeChat.jpg" alt="HumanEgo WeChat group QR code" width="260" />
+</p>
+
+> If the QR code has expired, add Zhi (Leo) Wang on WeChat (`tx-leo-wz`) and we'll invite you to the group.
+
 ---
 
 <h2 id="bibtex">BibTeX</h2>
