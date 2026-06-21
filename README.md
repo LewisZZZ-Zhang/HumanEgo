@@ -31,6 +31,8 @@
 <p align="center">
   <a href="https://huggingface.co/datasets/Leo-TX/HumanEgo"><img src="https://img.shields.io/badge/Dataset-Leo--TX%2FHumanEgo-ff8c2b?style=for-the-badge&logo=huggingface&logoColor=white" alt="HuggingFace Dataset" /></a>
   &nbsp;
+  <a href="https://huggingface.co/Leo-TX/HumanEgo"><img src="https://img.shields.io/badge/Checkpoints-Leo--TX%2FHumanEgo-e8772e?style=for-the-badge&logo=huggingface&logoColor=white" alt="HuggingFace Checkpoints" /></a>
+  &nbsp;
   <a href="https://leo-tx-humanego-gallery.static.hf.space"><img src="https://img.shields.io/badge/Data_Gallery-Browse_122_clips-ff6a00?style=for-the-badge&logo=huggingface&logoColor=white" alt="Data Gallery" /></a>
 </p>
 
@@ -283,6 +285,21 @@ SKIP_HARDWARE=0 bash setup.sh
 # then run the dual-arm reference loop:
 python inference/run_inference.py cfg/inference/example_dualarm.yaml
 ```
+
+**Pretrained checkpoints (no training required).** Our released policies live in the
+public HuggingFace **model** repo
+[`Leo-TX/HumanEgo`](https://huggingface.co/Leo-TX/HumanEgo). Each task folder ships
+`latest.pt` (inference weights) next to the `config.json` + `dataset_stats.json` the
+loader reads from the same directory. Download the `serve_bread` policy with:
+
+```bash
+huggingface-cli download Leo-TX/HumanEgo --include "serve_bread/*" --local-dir ./checkpoints
+# → ./checkpoints/serve_bread/{latest.pt, config.json, dataset_stats.json}
+```
+
+Then set `policy.ckpt: ./checkpoints/serve_bread/latest.pt` in your inference config
+(`cfg/inference/example_dualarm.yaml`). The same folder also carries `latest_full.pt`
+(optimizer state) if you'd rather resume training.
 
 The [`inference/`](inference/README.md) folder is a clean, hardware-agnostic
 **reference template** — it shows the standard structure rather than a turn-key
