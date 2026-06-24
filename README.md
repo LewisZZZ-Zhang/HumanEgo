@@ -200,6 +200,11 @@ preprocess it, train, and deploy.
 To apply for the Meta Project Aria glasses, see
 [projectaria.com/glasses](https://www.projectaria.com/glasses/).
 
+We are also actively adding support for other hardware — e.g. Meta Aria Gen 2,
+Meta Quest, Apple Vision Pro, RealSense, iPhone, etc. For the Quest setup in
+particular, see
+[`LV-Robotics-Lab/quest_streamer`](https://github.com/LV-Robotics-Lab/quest_streamer).
+
 See [`datacollection/README.md`](datacollection/README.md)
 for the end-to-end guide on recording your own Project Aria data and running
 MPS (SLAM + hand tracking) on it. The resulting data should look like this:
