@@ -16,7 +16,14 @@ Examples
 
 The destination layout is:
     data/<task>/aria/mps_<task>_<idx>_vrs/
+
+If sibling files named after the source MPS folder exist, they are also placed
+into the standardized layout:
+    <source>/<recording>.vrs      -> sample.vrs
+    <source>/<recording>.vrs.json -> else/sample.vrs.json
 """
+from __future__ import annotations
+
 import argparse
 import os
 import re
@@ -25,6 +32,7 @@ from pathlib import Path
 
 
 MPS_NAME_RE = re.compile(r"^mps_.+_vrs$")
+HEALTH_FILES = ("vrs_health_check.json", "vrs_health_check_slam.json")
 
 
 def natural_sort_key(path: Path):
@@ -66,7 +74,23 @@ def validate_task(task: str) -> str:
     return task
 
 
-def build_plan(mps_dirs: list[Path], args) -> list[tuple[Path, Path, list[str]]]:
+def mps_recording_stem(path: Path) -> str:
+    return path.name[len("mps_"):-len("_vrs")]
+
+
+def find_sidecar_file(mps_dir: Path, suffix: str) -> Path | None:
+    existing = mps_dir / f"sample{suffix}"
+    if existing.exists():
+        return existing
+
+    sibling = mps_dir.parent / f"{mps_recording_stem(mps_dir)}{suffix}"
+    if sibling.exists():
+        return sibling
+
+    return None
+
+
+def build_plan(mps_dirs: list[Path], args) -> list[tuple[Path, Path, Path | None, Path | None, list[str]]]:
     data_root = Path(args.data_root).expanduser().resolve()
     task = validate_task(args.task)
     plan = []
@@ -74,29 +98,61 @@ def build_plan(mps_dirs: list[Path], args) -> list[tuple[Path, Path, list[str]]]
     for idx, src in enumerate(mps_dirs):
         warnings = []
         dest = data_root / task / "aria" / f"mps_{task}_{idx:03d}_vrs"
+        vrs_src = find_sidecar_file(src, ".vrs")
+        json_src = find_sidecar_file(src, ".vrs.json")
 
         if dest.exists():
             raise FileExistsError(
                 f"Destination already exists: {dest}. Move it away or choose a different --task."
             )
 
-        if not (src / "sample.vrs").exists():
+        if vrs_src is None:
             warnings.append("missing sample.vrs")
+        if json_src is None:
+            warnings.append("missing sample.vrs.json")
         if not (src / "slam").exists():
             warnings.append("missing slam/")
         if not (src / "hand_tracking").exists():
             warnings.append("missing hand_tracking/")
 
-        plan.append((src, dest, warnings))
+        plan.append((src, dest, vrs_src, json_src, warnings))
 
     return plan
 
 
-def execute_plan(plan: list[tuple[Path, Path, list[str]]], copy: bool, dry_run: bool) -> None:
+def copy_or_move(src: Path, dest: Path, copy: bool) -> None:
+    if copy:
+        shutil.copy2(src, dest)
+    else:
+        shutil.move(str(src), str(dest))
+
+
+def standardize_mps_dir(dest: Path, vrs_src: Path | None, json_src: Path | None, copy: bool) -> None:
+    else_dir = dest / "else"
+    else_dir.mkdir(exist_ok=True)
+
+    if vrs_src is not None and vrs_src.exists() and not (dest / "sample.vrs").exists():
+        copy_or_move(vrs_src, dest / "sample.vrs", copy)
+
+    if json_src is not None and json_src.exists() and not (else_dir / "sample.vrs.json").exists():
+        copy_or_move(json_src, else_dir / "sample.vrs.json", copy)
+
+    for filename in HEALTH_FILES:
+        src = dest / filename
+        dst = else_dir / filename
+        if src.exists() and not dst.exists():
+            shutil.move(str(src), str(dst))
+
+
+def execute_plan(plan: list[tuple[Path, Path, Path | None, Path | None, list[str]]], copy: bool, dry_run: bool) -> None:
     action = "COPY" if copy else "MOVE"
-    for src, dest, warnings in plan:
+    for src, dest, vrs_src, json_src, warnings in plan:
         rel_warning = f"  [warn: {', '.join(warnings)}]" if warnings else ""
         print(f"{action}: {src} -> {dest}{rel_warning}")
+        if vrs_src is not None:
+            print(f"  {action}: {vrs_src} -> {dest / 'sample.vrs'}")
+        if json_src is not None:
+            print(f"  {action}: {json_src} -> {dest / 'else' / 'sample.vrs.json'}")
         if dry_run:
             continue
 
@@ -105,6 +161,7 @@ def execute_plan(plan: list[tuple[Path, Path, list[str]]], copy: bool, dry_run: 
             shutil.copytree(src, dest)
         else:
             shutil.move(str(src), str(dest))
+        standardize_mps_dir(dest, vrs_src, json_src, copy)
 
 
 def main():
