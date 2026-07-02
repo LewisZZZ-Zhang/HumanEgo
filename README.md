@@ -31,6 +31,8 @@
 <p align="center">
   <a href="https://huggingface.co/datasets/Leo-TX/HumanEgo"><img src="https://img.shields.io/badge/Dataset-Leo--TX%2FHumanEgo-ff8c2b?style=for-the-badge&logo=huggingface&logoColor=white" alt="HuggingFace Dataset" /></a>
   &nbsp;
+  <a href="https://huggingface.co/Leo-TX/HumanEgo"><img src="https://img.shields.io/badge/Checkpoints-Leo--TX%2FHumanEgo-e8772e?style=for-the-badge&logo=huggingface&logoColor=white" alt="HuggingFace Checkpoints" /></a>
+  &nbsp;
   <a href="https://leo-tx-humanego-gallery.static.hf.space"><img src="https://img.shields.io/badge/Data_Gallery-Browse_122_clips-ff6a00?style=for-the-badge&logo=huggingface&logoColor=white" alt="Data Gallery" /></a>
 </p>
 
@@ -198,6 +200,11 @@ preprocess it, train, and deploy.
 To apply for the Meta Project Aria glasses, see
 [projectaria.com/glasses](https://www.projectaria.com/glasses/).
 
+We are also actively adding support for other hardware — e.g. Meta Aria Gen 2,
+Meta Quest, Apple Vision Pro, RealSense, iPhone, etc. For the Quest setup in
+particular, see
+[`LV-Robotics-Lab/quest_streamer`](https://github.com/LV-Robotics-Lab/quest_streamer).
+
 See [`datacollection/README.md`](datacollection/README.md)
 for the end-to-end guide on recording your own Project Aria data and running
 MPS (SLAM + hand tracking) on it. The resulting data should look like this:
@@ -284,6 +291,21 @@ SKIP_HARDWARE=0 bash setup.sh
 python inference/run_inference.py cfg/inference/example_dualarm.yaml
 ```
 
+**Pretrained checkpoints (no training required).** Our released policies live in the
+public HuggingFace **model** repo
+[`Leo-TX/HumanEgo`](https://huggingface.co/Leo-TX/HumanEgo). Each task folder ships
+`latest.pt` (inference weights) next to the `config.json` + `dataset_stats.json` the
+loader reads from the same directory. Download the `serve_bread` policy with:
+
+```bash
+huggingface-cli download Leo-TX/HumanEgo --include "serve_bread/*" --local-dir ./checkpoints
+# → ./checkpoints/serve_bread/{latest.pt, config.json, dataset_stats.json}
+```
+
+Then set `policy.ckpt: ./checkpoints/serve_bread/latest.pt` in your inference config
+(`cfg/inference/example_dualarm.yaml`). The same folder also carries `latest_full.pt`
+(optimizer state) if you'd rather resume training.
+
 The [`inference/`](inference/README.md) folder is a clean, hardware-agnostic
 **reference template** — it shows the standard structure rather than a turn-key
 script. Implement three interfaces (`Camera`, `RobotArm`, `Perception`) for your
@@ -329,6 +351,14 @@ use (by or for a company) requires a separate paid license** — please get in t
 
 Questions are welcome! Reach out to Zhi (Leo) Wang at
 [tx.leo.wz@gmail.com](mailto:tx.leo.wz@gmail.com) (WeChat: `tx-leo-wz`).
+
+**Join our WeChat group** to discuss HumanEgo, ask questions, and stay updated — scan the QR code below:
+
+<p align="center">
+  <img src="assets/WeChat.jpg" alt="HumanEgo WeChat group QR code" width="260" />
+</p>
+
+> If the QR code has expired, add Zhi (Leo) Wang on WeChat (`tx-leo-wz`) and we'll invite you to the group.
 
 ---
 
