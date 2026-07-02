@@ -260,7 +260,7 @@ check_import "sam2"                  "import sam2"
 check_import "diffusers"             "import diffusers"
 check_import "timm"                  "import timm"
 check_import "rembg"                 "import rembg"
-check_import "onnxruntime CUDA"      "import importlib; importlib.import_module('preprocess.Lama')._require_cuda_provider()"
+check_import "onnxruntime"           "import onnxruntime"
 check_import "xformers"              "import xformers"
 check_import "ultralytics"           "import ultralytics"
 

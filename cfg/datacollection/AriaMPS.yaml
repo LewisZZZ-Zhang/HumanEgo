@@ -8,8 +8,8 @@
 # published here.
 
 # --- Authentication ---
-username: "nyuedu_rnsv2p"
-password: "nyuedu0001"
+username: "<your-aria-username>"
+password: "<your-aria-password>"
 
 # --- Feature Selection ---
 # Options: "SLAM", "HAND_TRACKING", "EYE_GAZE"

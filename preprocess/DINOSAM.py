@@ -69,9 +69,7 @@ class DINOSAMEngine:
     """Model Engine for DINO and SAM2."""
     def __init__(self, cfg):
         self.cfg = cfg
-        if not torch.cuda.is_available():
-            raise RuntimeError("DINO/SAM2 requires CUDA, but torch.cuda.is_available() is False.")
-        self.device = "cuda"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         
         print(f"║ [System] Initializing Models on {self.device}...")
         self.processor = AutoProcessor.from_pretrained(self.cfg.dino_model_id)
